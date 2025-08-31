@@ -1,280 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Worldly Chat</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <!-- Minimal SVG favicon: globe outline -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='24' cy='24' r='20' fill='%23d8f3dc' stroke='%2340916c' stroke-width='3.5'/%3E%3Cellipse cx='24' cy='24' rx='17' ry='20' fill='none' stroke='%2352b788' stroke-width='1.5'/%3E%3Cellipse cx='24' cy='24' rx='20' ry='7' fill='none' stroke='%2352b788' stroke-width='1.5'/%3E%3C/svg%3E">
-  <style>
-    :root {
-      --c1: #d8f3dc;
-      --c2: #b7e4c7;
-      --c3: #95d5b2;
-      --c4: #74c69d;
-      --c5: #52b788;
-      --c6: #40916c;
-      --c7: #2d6a4f;
-      --c8: #1b4332;
-      --c9: #081c15;
-    }
-    body {
-      margin:0; padding:0; font-family:system-ui,sans-serif;
-      background:linear-gradient(125deg,var(--c1),var(--c3));
-      min-height:100vh;
-      color:var(--c8);
-    }
-    .container {
-      max-width:420px;
-      margin:38px auto;
-      background: var(--c1);
-      border-radius: 24px;
-      box-shadow:0 8px 32px 0 var(--c2);
-      display:flex; flex-direction:column;
-      height: calc(100vh - 76px); min-height:540px;
-    }
-    .header {
-      background: var(--c2);
-      border-radius:24px 24px 0 0;
-      padding:1.2rem 1rem 0.7rem;
-      text-align:center;
-      flex-shrink:0;
-    }
-    .headericon {
-      display: block; margin:0 auto 0.2em auto; width:2.4em; height:2.4em;
-    }
-    .header h1 { font-size:1.6em; font-weight:700; letter-spacing:0.01em; color:var(--c8);}
-    .header p { font-size:.96em; color:var(--c7);}
-    .messages {
-      flex:1; overflow-y:auto; padding: 1rem;
-      border-radius:0 0 12px 12px;
-      background:var(--c1);
-      font-size:1em;
-      min-height: 0;
-    }
-    .loading { color: var(--c6); font-style:italic; text-align:center; padding:2rem;}
-    .message {
-      background: var(--c2);
-      border-radius:10px;
-      margin-bottom:1em;
-      padding:0.7em 1em .6em .9em;
-      border-left:3.5px solid var(--c5);
-      box-shadow:0 2px 8px 0 var(--c3)11;
-      word-break:break-word;
-      transition: box-shadow .21s;
-    }
-    .message-header {display:flex; justify-content:space-between;align-items:center; margin-bottom:.35em; font-size:.97em;}
-    .sender {font-weight:600; color:var(--c7);}
-    .timestamp {color:var(--c8); opacity:0.55; }
-    .message-text { line-height:1.44;}
-    .message-image {
-      display:block;
-      max-width:96%;
-      height:auto;
-      max-height:210px;
-      border-radius:7px;
-      margin-top:.4em;
-      object-fit:contain;
-      background: #fff;
-      box-shadow: 0 2px 10px 0 var(--c3)55;
-    }
-    .download-button {
-      background:var(--c4); color:var(--c8);
-      border:none; border-radius: 6px;
-      padding:.3em .9em; cursor:pointer; font-size:.99em; margin-top:.35em;
-      font-weight:500; transition: background .18s;
-    }
-    .download-button:hover { background:var(--c5);}
-    .input-area {
-      display:flex; gap:0.5em; align-items:center;
-      padding:0.7em 1em 1em 1em;
-      background:var(--c2);
-      border-radius:0 0 24px 24px; flex-shrink:0;
-    }
-    .message-input {
-      flex:1; padding:.55em 1em; border: 2px solid var(--c4); border-radius: 22px;
-      background:var(--c1); font-size:1em; color:var(--c8); outline:none;
-      transition:border-color .18s;
-    }
-    .message-input:focus { border-color:var(--c5);}
-    .file-input {display:none;}
-    .upload-button, .send-button {
-      width:36px;height:36px;border-radius:60%;
-      border:none; cursor:pointer;
-      font-size:1.25em;display:flex;align-items:center;justify-content:center;
-      background:var(--c4);color:var(--c7);
-      transition:background .16s, transform .18s;
-    }
-    .upload-button:hover, .send-button:hover { background:var(--c5);}
-    .send-button {margin-left:.15em;}
-    .modal {
-      position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(43,87,64,0.09);display:flex;align-items:center;justify-content:center;z-index:1600;
-    }
-    .modal-content {
-      background: var(--c1);
-      padding:2.1em 1.7em 1.6em;
-      border-radius:11px;
-      box-shadow:0 4px 18px 0 var(--c3)80;
-      text-align:center;
-      max-width:340px; width:92%; border:1.7px solid var(--c3);
-    }
-    .modal h2 { color:var(--c6); font-size:1.27em;}
-    .name-input {
-      width:90%;padding:.7em 1em; border:2px solid var(--c4);
-      border-radius:8px; font-size:1.02rem; margin:1em 0;.background:var(--c1); color:var(--c8);
-      outline:none; transition: border-color .22s;
-    }
-    .name-input:focus { border-color:var(--c5);}
-    .modal-button { background:var(--c4); color:var(--c8); border:none;
-      padding:.58em 1.4em; border-radius:7px; cursor:pointer; font-size:1rem; font-weight:500;
-      margin-top:.5em; transition:background .17s;}
-    .modal-button:hover { background:var(--c5);}
-    @media (max-width:520px){
-      .container {margin:0;min-height:100vh;border-radius:0;}
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Worldly Chat</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='24' cy='24' r='20' fill='%23d8f3dc' stroke='%2340916c' stroke-width='3.5'/%3E%3Cellipse cx='24' cy='24' rx='17' ry='20' fill='none' stroke='%2352b788' stroke-width='1.5'/%3E%3Cellipse cx='24' cy='24' rx='20' ry='7' fill='none' stroke='%2352b788' stroke-width='1.5'/%3E%3C/svg%3E">
+<style>
+:root{--c1:#d8f3dc;--c2:#b7e4c7;--c3:#95d5b2;--c4:#74c69d;--c5:#52b788;--c6:#40916c;--c7:#2d6a4f;--c8:#1b4332}
+body{margin:0;font-family:system-ui,sans-serif;background:linear-gradient(130deg,var(--c1),var(--c3))}
+.container{max-width:440px;margin:36px auto;height:calc(100vh-72px);min-height:540px;display:flex;flex-direction:column;background:var(--c1);border-radius:24px;box-shadow:0 8px 30px var(--c2)}
+.header{background:var(--c2);border-radius:24px 24px 0 0;text-align:center;padding:1.2rem 1rem .8rem}
+.header svg{width:2.3em;height:2.3em;margin:.2em auto .35em}
+.header h1{margin:0;font-size:1.65em;color:var(--c8)}
+.header p{margin:.15em 0 0;font-size:.95em;color:var(--c7)}
+.messages{flex:1;overflow-y:auto;padding:1rem;background:var(--c1)}
+.message{background:var(--c2);border-left:4px solid var(--c5);border-radius:10px;padding:.7em .95em;margin-bottom:1em;box-shadow:0 2px 6px var(--c3)55}
+.message-header{display:flex;justify-content:space-between;font-size:.93em;margin-bottom:.35em}
+.sender{font-weight:600;color:var(--c7)}
+.timestamp{opacity:.6;color:var(--c8)}
+.message-image{display:block;max-width:98%;max-height:210px;margin-top:.45em;border-radius:7px;object-fit:contain;background:#fff;box-shadow:0 1px 6px var(--c3)77}
+.download-button{margin-top:.4em;padding:.3em .9em;border:none;border-radius:6px;background:var(--c4);color:var(--c8);cursor:pointer}
+.input-area{display:flex;gap:.55em;padding:.75em 1em 1em;background:var(--c2);border-radius:0 0 24px 24px}
+.message-input{flex:1;padding:.55em 1em;border:2px solid var(--c4);border-radius:22px;background:var(--c1);color:var(--c8)}
+.message-input:focus{border-color:var(--c5);outline:none}
+.file-input{display:none}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:none;font-size:1.25em;display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer}
+.icon-btn:hover{background:var(--c5)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center}
+.modal-box{background:var(--c1);padding:2rem 1.8rem 1.6rem;border-radius:12px;border:1.6px solid var(--c3);text-align:center;box-shadow:0 6px 22px var(--c3)66}
+.modal-box h2{margin:0 0 .8em;color:var(--c6)}
+.name-input{width:85%;padding:.7em 1em;border:2px solid var(--c4);border-radius:8px;font-size:1rem;background:var(--c1);color:var(--c8)}
+.name-input:focus{border-color:var(--c5);outline:none}
+.modal-btn{margin-top:1em;padding:.55em 1.4em;border:none;border-radius:8px;background:var(--c4);color:var(--c8);cursor:pointer}
+@media(max-width:520px){.container{margin:0;height:100vh;border-radius:0}}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <svg class="headericon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#d8f3dc" stroke="#40916c" stroke-width="2.3"/><ellipse cx="16" cy="16" rx="11" ry="14" fill="none" stroke="#74c69d" stroke-width="1.3"/><ellipse cx="16" cy="16" rx="14" ry="5.4" fill="none" stroke="#52b788" stroke-width="1.3"/></svg>
-      <h1>Worldly Chat</h1>
-      <p>Real-time public chat for everyone</p>
-    </div>
-    <div class="messages" id="messagesContainer">
-      <div class="loading">Loading messages...</div>
-    </div>
-    <div class="input-area">
-      <input type="text" class="message-input" id="messageInput" placeholder="Type a message..." maxlength="700" autocomplete="off" />
-      <input type="file" class="file-input" id="fileInput" />
-      <button class="upload-button" id="uploadButton" title="Upload file">+</button>
-      <button class="send-button" id="sendButton" title="Send">→</button>
-    </div>
+<div class="container">
+  <div class="header">
+    <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#d8f3dc" stroke="#40916c" stroke-width="2.2"/><ellipse cx="16" cy="16" rx="11" ry="14" fill="none" stroke="#74c69d" stroke-width="1.2"/><ellipse cx="16" cy="16" rx="14" ry="5.3" fill="none" stroke="#52b788" stroke-width="1.2"/></svg>
+    <h1>Worldly Chat</h1>
+    <p>Real-time public chat for everyone</p>
   </div>
-  <!-- Name entry modal -->
-  <div class="modal" id="nameModal" style="display:flex;">
-    <div class="modal-content">
-      <h2>Welcome to Worldly Chat</h2>
-      <p style="margin-bottom:1em;color:var(--c7)">Enter your name to join</p>
-      <input type="text" class="name-input" id="nameInput" placeholder="Your name" maxlength="36"/>
-      <br>
-      <button class="modal-button" id="nameSubmit">Join</button>
-    </div>
-  </div>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
-  authDomain: "worldlychat.firebaseapp.com",
-  databaseURL: "https://worldlychat-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "worldlychat",
-  storageBucket: "worldlychat.appspot.com",
-  messagingSenderId: "755741319630",
-  appId: "1:755741319630:web:83f35e68dea64d8aae0b9f"
-};
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const messagesRef = ref(db, "messages");
-let userName = "", selectedFile = null, selectedFileType = "", selectedFileName = "";
-const nameModal = document.getElementById('nameModal');
-const nameInput = document.getElementById('nameInput');
-const nameSubmit = document.getElementById('nameSubmit');
-const messagesContainer = document.getElementById('messagesContainer');
-const messageInput = document.getElementById('messageInput');
-const fileInput = document.getElementById('fileInput');
-const uploadButton = document.getElementById('uploadButton');
-const sendButton = document.getElementById('sendButton');
-// Modal logic
-nameSubmit.addEventListener('click', trySubmitName);
-nameInput.addEventListener('keypress', e=>{if(e.key==='Enter')trySubmitName();});
-function trySubmitName() {
-  const name = nameInput.value.trim();
-  if (name) {
-    userName = name;
-    nameModal.style.display="none";
-    messageInput.focus();
-    startListeningToMessages();
-  } else {
-    nameInput.focus(); nameInput.style.borderColor="#e63946"; setTimeout(()=>nameInput.style.borderColor="",550);
-  }
-}
-// File input logic
-uploadButton.addEventListener('click', ()=>fileInput.click());
-fileInput.addEventListener('change',function(e){
-  selectedFile=(e.target.files&&e.target.files[0])||null;
-  if(selectedFile && selectedFile.size>5*1024*1024){alert("File too large (max 5MB)");fileInput.value='';selectedFile=null;return;}
-  selectedFileType=selectedFile?selectedFile.type:''; selectedFileName=selectedFile?selectedFile.name:'';
-});
-sendButton.addEventListener('click', sendMessage);
-messageInput.addEventListener('keypress', e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
-function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text && !selectedFile) return;
-  let messageData = { name:userName, text:text, timestamp:Date.now()};
-  if(selectedFile){
-    const reader = new FileReader();
-    reader.onload = function(ev){
-      messageData.file=ev.target.result;messageData.fileType=selectedFileType;messageData.fileName=selectedFileName;
-      push(messagesRef,messageData); resetInput();
-    };
-    reader.readAsDataURL(selectedFile);
-  } else {
-    push(messagesRef,messageData); resetInput();
-  }
-}
-function resetInput(){
-  messageInput.value=''; fileInput.value=''; selectedFile=null; selectedFileType=''; selectedFileName='';
-}
 
-// FINAL: Always show all messages, correctly!
-function startListeningToMessages() {
-  onValue(messagesRef, snap => {
-    // Only clear container ONCE here:
-    messagesContainer.innerHTML = "";
-    let messages = [];
-    snap.forEach(child => messages.push({id:child.key, ...child.val()}));
-    messages.sort((a,b)=>a.timestamp-b.timestamp);
-    if(messages.length===0) messagesContainer.innerHTML='<div class="loading">No messages yet.</div>';
-    else messages.forEach(displayMessage); // Do NOT clear container in displayMessage!
-    // Scroll to bottom after rendering all
-    messagesContainer.scrollTop = messagesContainer.scrollHeight+999;
-  });
+  <div class="messages" id="messages"></div>
+
+  <div class="input-area">
+    <input id="text" class="message-input" placeholder="Type a message..." maxlength="700" autocomplete="off">
+    <input id="file" type="file" class="file-input">
+    <button id="pick" class="icon-btn">＋</button>
+    <button id="send" class="icon-btn">→</button>
+  </div>
+</div>
+
+<div id="modal" class="modal">
+  <div class="modal-box">
+    <h2>Welcome to Worldly Chat</h2>
+    <input id="who" class="name-input" placeholder="Your name" maxlength="40">
+    <br><button id="join" class="modal-btn">Join</button>
+  </div>
+</div>
+
+<script type="module">
+import {initializeApp}   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import {getDatabase,ref,push,onValue,off} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
+  authDomain:"worldlychat.firebaseapp.com",
+  databaseURL:"https://worldlychat-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"worldlychat",
+  storageBucket:"worldlychat.appspot.com",
+  messagingSenderId:"755741319630",
+  appId:"1:755741319630:web:83f35e68dea64d8aae0b9f"
+});
+const db  = getDatabase(app);
+const msgs= ref(db,"messages");
+
+/* ─────── UI elements ─────── */
+const $ = id => document.getElementById(id);
+const box  = $("messages");
+const txt  = $("text");
+const fsel = $("file");
+const pick = $("pick");
+const send = $("send");
+const modal= $("modal");
+const who  = $("who");
+const join = $("join");
+
+let username="", fileObj=null;
+
+/* ─────── join chat ─────── */
+join.onclick = () => {
+  const n = who.value.trim();
+  if(!n) return who.focus();
+  username = n; modal.remove();
+  txt.focus(); listen();
+};
+who.onkeypress = e=>e.key==="Enter" && join.click();
+
+/* ─────── pick file ─────── */
+pick.onclick = ()=>fsel.click();
+fsel.onchange = () => fileObj = fsel.files[0]||null;
+
+/* ─────── send message ─────── */
+send.onclick = sendMsg;
+txt.onkeypress = e=>{ if(e.key==="Enter" && !e.shiftKey){e.preventDefault(); sendMsg();}};
+
+function sendMsg(){
+  const text = txt.value.trim();
+  if(!text && !fileObj) return;
+  const data = {name:username,text,timestamp:Date.now()};
+  if(fileObj){
+    const rdr = new FileReader();
+    rdr.onload = e=>{
+      Object.assign(data,{file:e.target.result,fileName:fileObj.name,fileType:fileObj.type});
+      push(msgs,data); clear();
+    };
+    rdr.readAsDataURL(fileObj);
+  }else{ push(msgs,data); clear(); }
 }
-function escapeHtml(txt) {
-  let d=document.createElement("div");d.textContent=txt;return d.innerHTML;
+function clear(){ txt.value=""; fsel.value=""; fileObj=null; }
+
+/* ─────── live feed ─────── */
+function listen(){
+  let first = true;
+  const handler = snap=>{
+    const arr=[];
+    snap.forEach(c=>arr.push({...c.val(),id:c.key}));
+    arr.sort((a,b)=>a.timestamp-b.timestamp);
+    requestAnimationFrame(()=>{
+      box.innerHTML="";
+      arr.forEach(render);
+      box.scrollTop = box.scrollHeight;
+      if(first){ first=false; off(msgs,handler); setTimeout(()=>onValue(msgs,handler),0);} // detach+reattach once
+    });
+  };
+  onValue(msgs,handler);
 }
-function displayMessage(msg){
-  const div = document.createElement('div');
-  div.className = 'message';
-  div.innerHTML = `<div class="message-header">
-      <span class="sender">${escapeHtml(msg.name||'Worldly')}</span>
-      <span class="timestamp">${new Date(msg.timestamp).toLocaleString()}</span>
-    </div>
-    <div class="message-text">${escapeHtml(msg.text||'')}</div>`;
-  if(msg.file){
-    if(msg.fileType&&msg.fileType.startsWith("image/")){
-      const img=document.createElement('img');
-      img.className="message-image"; img.src=msg.file; img.alt='Uploaded image';
-      div.appendChild(img);
+function render(m){
+  const d=document.createElement("div");
+  d.className="message";
+  d.innerHTML=`<div class="message-header">
+                 <span class="sender">${esc(m.name)}</span>
+                 <span class="timestamp">${new Date(m.timestamp).toLocaleString()}</span>
+               </div>
+               <div class="message-text">${esc(m.text)}</div>`;
+  if(m.file){
+    if(m.fileType?.startsWith("image")){
+      const img=new Image(); img.src=m.file; img.alt="image"; img.className="message-image";
+      d.appendChild(img);
     }else{
-      const btn=document.createElement('button');
-      btn.className='download-button'; btn.textContent=`Download: ${msg.fileName||"File"}`;
-      btn.onclick=()=>downloadFile(msg.file,msg.fileName||"file",msg.fileType||"application/octet-stream");
-      div.appendChild(btn);
+      const b=document.createElement("button");
+      b.textContent = "Download "+(m.fileName||"file");
+      b.className="download-button";
+      b.onclick=()=>download(m.file,m.fileName||"file",m.fileType||"application/octet-stream");
+      d.appendChild(b);
     }
   }
-  // Only append, never replace!
-  messagesContainer.appendChild(div);
+  box.appendChild(d);
 }
-function downloadFile(base64, fileName, fileType) {
-  const [_,data]=base64.split(','); const byteChars=atob(data);
-  const byteNumbers=new Array(byteChars.length);
-  for(let i=0;i<byteChars.length;i++)byteNumbers[i]=byteChars.charCodeAt(i);
-  const blob=new Blob([new Uint8Array(byteNumbers)],{type:fileType});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);a.download=fileName;document.body.appendChild(a);
-  a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(a.href),800);
+function esc(t){return t.replace(/[&<>"']/g,m=>({&:"&amp;",<:"&lt;",>:"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function download(base64,name,type){
+  const url = URL.createObjectURL(fetch(base64).then(r=>r.blob()).then(b=>b));
+  const a=document.createElement("a"); a.href=base64; a.download=name; a.click();
 }
 </script>
 </body>
