@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worldly Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: #4a90e2;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-left: 4px solid #4a90e2;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .sender {
+            font-weight: 600;
+            color: #4a90e2;
+        }
+
+        .timestamp {
+            color: #6c757d;
+        }
+
+        .message-text {
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .message-image {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .download-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .download-button:hover {
+            background: #218838;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: #4a90e2;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button, .send-button {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-button {
+            background: #6c757d;
+            color: white;
+        }
+
+        .upload-button:hover {
+            background: #5a6268;
+            transform: scale(1.05);
+        }
+
+        .send-button {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .send-button:hover {
+            background: #357abd;
+            transform: scale(1.05);
+        }
+
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal h2 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            outline: none;
+        }
+
+        .name-input:focus {
+            border-color: #4a90e2;
+        }
+
+        .modal-button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .modal-button:hover {
+            background: #357abd;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            .container {
+                height: 100vh;
+            }
+            
+            .input-area {
+                flex-wrap: wrap;
+            }
+            
+            .message-input {
+                min-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Worldly Chat</h1>
+            <p>Real-time messaging for everyone</p>
+        </div>
+        
+        <div class="messages" id="messagesContainer">
+            <div class="loading">Loading messages...</div>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" class="message-input" id="messageInput" placeholder="Type your message..." maxlength="1000">
+            <input type="file" class="file-input" id="fileInput" accept="*/*">
+            <button class="upload-button" id="uploadButton" title="Upload file">📎</button>
+            <button class="send-button" id="sendButton" title="Send message">➤</button>
+        </div>
+    </div>
+
+    <!-- Name input modal -->
+    <div class="modal" id="nameModal">
+        <div class="modal-content">
+            <h2>Welcome to Global Messenger</h2>
+            <p style="margin-bottom: 1rem; color: #6c757d;">Enter your name to start chatting</p>
+            <input type="text" class="name-input" id="nameInput" placeholder="Your name" maxlength="50">
+            <button class="modal-button" id="nameSubmit">Join Chat</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
+    authDomain: "worldlychat.firebaseapp.com",
+    projectId: "worldlychat",
+    storageBucket: "worldlychat.firebasestorage.app",
+    messagingSenderId: "755741319630",
+    appId: "1:755741319630:web:83f35e68dea64d8aae0b9f"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const messagesRef = ref(database, 'messages');
+
+        // Global variables
+        let userName = '';
+        
+        // DOM elements
+        const nameModal = document.getElementById('nameModal');
+        const nameInput = document.getElementById('nameInput');
+        const nameSubmit = document.getElementById('nameSubmit');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const sendButton = document.getElementById('sendButton');
+
+        // Initialize app
+        function init() {
+            // Show name modal
+            nameModal.style.display = 'flex';
+            nameInput.focus();
+            
+            // Handle name submission
+            nameSubmit.addEventListener('click', handleNameSubmit);
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleNameSubmit();
+            });
+            
+            // Set up message sending
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // File upload handling
+            uploadButton.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileUpload);
+        }
+
+        function handleNameSubmit() {
+            const name = nameInput.value.trim();
+            if (name) {
+                userName = name;
+                nameModal.style.display = 'none';
+                messageInput.focus();
+                startListeningToMessages();
+            } else {
+                alert('Please enter your name');
+            }
+        }
+
+        function startListeningToMessages() {
+            messagesContainer.innerHTML = '';
+            
+            // Listen for new messages
+            onValue(messagesRef, (snapshot) => {
+                messagesContainer.innerHTML = '';
+                const messages = [];
+                
+                snapshot.forEach((childSnapshot) => {
+                    messages.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                
+                // Sort messages by timestamp
+                messages.sort((a, b) => a.timestamp - b.timestamp);
+                
+                // Display messages
+                messages.forEach(displayMessage);
+                
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        }
+
+        function displayMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const timestamp = new Date(message.timestamp).toLocaleString();
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="sender">${escapeHtml(message.name)}</span>
+                    <span class="timestamp">${timestamp}</span>
+                </div>
+                <div class="message-text">${escapeHtml(message.text)}</div>
+            `;
+            
+            // Handle file attachments
+            if (message.file) {
+                if (message.fileType && message.fileType.startsWith('image/')) {
+                    // Display image inline
+                    const img = document.createElement('img');
+                    img.src = message.file;
+                    img.className = 'message-image';
+                    img.alt = 'Uploaded image';
+                    messageDiv.appendChild(img);
+                } else {
+                    // Display download button for other files
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-button';
+                    downloadBtn.textContent = `📁 Download ${message.fileName || 'File'}`;
+                    downloadBtn.onclick = () => downloadFile(message.file, message.fileName, message.fileType);
+                    messageDiv.appendChild(downloadBtn);
+                }
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+        }
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text && !fileInput.files[0]) return;
+            
+            const messageData = {
+                name: userName,
+                text: text,
+                timestamp: Date.now()
+            };
+            
+            // Handle file upload if present
+            if (fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    messageData.file = e.target.result;
+                    messageData.fileName = file.name;
+                    messageData.fileType = file.type;
+                    
+                    // Send message with file
+                    push(messagesRef, messageData);
+                    
+                    // Clear inputs
+                    messageInput.value = '';
+                    fileInput.value = '';
+                };
+                
+                reader.readAsDataURL(file);
+            } else {
+                // Send text-only message
+                push(messagesRef, messageData);
+                messageInput.value = '';
+            }
+        }
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Check file size (limit to 5MB for demo)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                // Show file selected
+                uploadButton.style.background = '#28a745';
+                setTimeout(() => {
+                    uploadButton.style.background = '#6c757d';
+                }, 1000);
+            }
+        }
+
+        function downloadFile(base64Data, fileName, fileType) {
+            // Create blob from base64
+            const byteCharacters = atob(base64Data.split(',')[1]);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: fileType });
+            
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName || 'download';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+</html>
