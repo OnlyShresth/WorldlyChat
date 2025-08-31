@@ -1,493 +1,363 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Worldly Chat</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-
-        .header {
-            background: #4a90e2;
-            color: white;
-            padding: 1rem;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-            scroll-behavior: smooth;
-        }
-
-        .message {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border-left: 4px solid #4a90e2;
-        }
-
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .sender {
-            font-weight: 600;
-            color: #4a90e2;
-        }
-
-        .timestamp {
-            color: #6c757d;
-        }
-
-        .message-text {
-            margin-bottom: 0.5rem;
-            line-height: 1.4;
-        }
-
-        .message-image {
-            max-width: 100%;
-            border-radius: 8px;
-            margin-top: 0.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .download-button {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-            transition: background 0.2s;
-        }
-
-        .download-button:hover {
-            background: #218838;
-        }
-
-        .input-area {
-            display: flex;
-            gap: 0.5rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .message-input {
-            flex: 1;
-            padding: 0.75rem;
-            border: 2px solid #dee2e6;
-            border-radius: 25px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .message-input:focus {
-            border-color: #4a90e2;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .upload-button, .send-button {
-            padding: 0.75rem 1rem;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s;
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .upload-button {
-            background: #6c757d;
-            color: white;
-        }
-
-        .upload-button:hover {
-            background: #5a6268;
-            transform: scale(1.05);
-        }
-
-        .send-button {
-            background: #4a90e2;
-            color: white;
-        }
-
-        .send-button:hover {
-            background: #357abd;
-            transform: scale(1.05);
-        }
-
-        /* Modal styles */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-        }
-
-        .modal h2 {
-            margin-bottom: 1rem;
-            color: #333;
-        }
-
-        .name-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            outline: none;
-        }
-
-        .name-input:focus {
-            border-color: #4a90e2;
-        }
-
-        .modal-button {
-            background: #4a90e2;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.2s;
-        }
-
-        .modal-button:hover {
-            background: #357abd;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #6c757d;
-            font-style: italic;
-        }
-
-        /* Responsive design */
-        @media (max-width: 600px) {
-            .container {
-                height: 100vh;
-            }
-            
-            .input-area {
-                flex-wrap: wrap;
-            }
-            
-            .message-input {
-                min-width: 200px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Worldly Chat</title>
+  <!-- Favicon: simple green globe SVG data-URL, no .ico fetch needed -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='32' cy='32' rx='30' ry='30' fill='%2352b788' stroke='%23081c15' stroke-width='4'/%3E%3Cellipse cx='32' cy='32' rx='14' ry='30' fill='none' stroke='%23081c15' stroke-width='2'/%3E%3Cellipse cx='32' cy='32' rx='30' ry='14' fill='none' stroke='%23081c15' stroke-width='2'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --c1: #d8f3dc;
+      --c2: #b7e4c7;
+      --c3: #95d5b2;
+      --c4: #74c69d;
+      --c5: #52b788;
+      --c6: #40916c;
+      --c7: #2d6a4f;
+      --c8: #1b4332;
+      --c9: #081c15;
+    }
+    * { margin:0; padding:0; box-sizing: border-box;}
+    body {
+      font-family: system-ui,sans-serif;
+      background: linear-gradient(135deg, var(--c1) 0%, var(--c4) 100%);
+      min-height:100vh;
+      color: var(--c8);
+      overflow: hidden;
+    }
+    .container {
+      max-width:480px; margin:32px auto;
+      background: var(--c2);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px 0 var(--c3);
+      display:flex; flex-direction:column;
+      min-height: 80vh; height:80vh;
+    }
+    .header {
+      background: var(--c6);
+      color: var(--c1);
+      border-radius:20px 20px 0 0;
+      text-align:center;
+      padding: 1.4rem 1rem 1rem;
+      box-shadow:0 4px 32px -10px var(--c9);
+    }
+    .header h1 {
+      font-size:2rem; font-weight:900; margin-bottom:0.3rem;
+      letter-spacing: 0.01em;
+      text-shadow: 0 2px 2px var(--c9)22;
+    }
+    .header p {
+      font-size:1rem; font-weight:500; color: var(--c3);
+      letter-spacing: 0.03em;
+    }
+    .messages {
+      flex:1; overflow-y:auto;
+      padding: 1rem; 
+      background: var(--c1);
+      border-radius: 0 0 12px 12px;
+      transition: background .2s;
+      scroll-behavior:smooth;
+    }
+    .loading { color: var(--c6); font-style:italic; text-align:center; padding:2rem; }
+    .message {
+      background: var(--c2);
+      margin-bottom: 1.1rem;
+      border-radius: 12px;
+      box-shadow:0 2px 8px 0 var(--c4)44;
+      border-left:5px solid var(--c5);
+      padding:0.8rem 1rem 0.7rem 1.1rem;
+      transition:box-shadow .15s;
+    }
+    .message:last-child { margin-bottom:0.2rem;}
+    .message-header {
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:0.35rem;
+      font-size: 0.93rem;
+    }
+    .sender {
+      font-weight:600; color: var(--c7); letter-spacing: .01em;
+    }
+    .timestamp {
+      color: var(--c8); font-size:0.87em; font-weight:400;
+      opacity: 0.64;
+    }
+    .message-text { font-size:1.01rem; word-break:break-word; line-height:1.45;}
+    .message-image {
+      margin:0.7rem 0 0.2rem 0; max-width:100%; border-radius:8px;
+      box-shadow:0 2px 8px 0 var(--c6)11;
+      display:block;
+    }
+    .download-button {
+      background: var(--c6); color:var(--c1);
+      border:none; border-radius: 6px;
+      padding: 0.35rem 0.9rem; cursor:pointer;
+      font-size: .99rem; margin:0.5rem 0 0 0;
+      font-weight:500; letter-spacing:.01em;
+      transition: background .2s;
+    }
+    .download-button:hover { background: var(--c8);}
+    .input-area {
+      display:flex; gap:0.6rem; align-items:center;
+      padding: 0.75rem 1rem 0.9rem;
+      background: var(--c5);
+      border-radius:0 0 20px 20px;
+      box-shadow:0 8px 32px -16px var(--c9)11 inset;
+    }
+    .message-input {
+      flex:1; padding: 0.65rem 1.1rem;
+      border: 2px solid var(--c4);
+      border-radius: 25px;
+      background: var(--c1);
+      font-size: 1rem;
+      outline: none;
+      color:var(--c8);
+      transition:border-color 0.18s;
+    }
+    .message-input:focus { border-color:var(--c6);}
+    .file-input { display:none; }
+    .upload-button,.send-button {
+      width:44px; height:44px; border-radius:50%;
+      background: var(--c6); color: var(--c1);
+      border:none; cursor:pointer;
+      font-size:1.36rem;
+      display:flex; align-items:center; justify-content:center;
+      transition: box-shadow .15s, background .18s, transform .22s;
+      z-index:5;
+    }
+    .upload-button { background: var(--c4); color: var(--c8);}
+    .upload-button:hover { background: var(--c5);}
+    .send-button { background: var(--c7);}
+    .send-button:hover { background: var(--c8); color:var(--c1);}
+    .modal {
+      position:fixed; top:0;left:0;width:100vw;height:100vh;
+      background:rgba(0,48,32,0.33);
+      display:flex;align-items:center;justify-content:center;
+      z-index:1700;
+    }
+    .modal-content {
+      background:var(--c2);
+      padding:2rem 1.6rem 1.8rem;
+      border-radius:12px;
+      box-shadow:0 10px 36px 0 var(--c8)33;
+      text-align:center;
+      max-width:340px; width:92%;
+      border: 2px solid var(--c3);
+    }
+    .modal h2 { color:var(--c7); margin-bottom:0.7rem;}
+    .name-input {
+      width:90%; padding:0.7rem 1rem;
+      border:2px solid var(--c3);
+      border-radius:8px;
+      font-size: 1.04rem; margin:1rem 0;
+      background: var(--c1); color: var(--c8);
+      outline:none; transition: border-color .22s;
+    }
+    .name-input:focus { border-color:var(--c5);}
+    .modal-button {
+      background:var(--c6); color:var(--c1);
+      border:none;
+      padding:0.6rem 1.5rem;
+      border-radius:8px;
+      cursor:pointer;
+      font-size:1rem;
+      font-weight:500;
+      transition:background .17s;
+      margin-top: 0.7rem;
+    }
+    .modal-button:hover { background:var(--c7);}
+    @media (max-width:520px){
+      .container {margin:0; min-height: 100vh; border-radius: 0;}
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🌐 Worldly Chat</h1>
-            <p>Real-time messaging for everyone</p>
-        </div>
-        
-        <div class="messages" id="messagesContainer">
-            <div class="loading">Loading messages...</div>
-        </div>
-        
-        <div class="input-area">
-            <input type="text" class="message-input" id="messageInput" placeholder="Type your message..." maxlength="1000">
-            <input type="file" class="file-input" id="fileInput" accept="*/*">
-            <button class="upload-button" id="uploadButton" title="Upload file">📎</button>
-            <button class="send-button" id="sendButton" title="Send message">➤</button>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>🌍 Worldly Chat</h1>
+      <p>Real-time messaging for everyone</p>
     </div>
-
-    <!-- Name input modal -->
-    <div class="modal" id="nameModal">
-        <div class="modal-content">
-            <h2>Welcome to Global Messenger</h2>
-            <p style="margin-bottom: 1rem; color: #6c757d;">Enter your name to start chatting</p>
-            <input type="text" class="name-input" id="nameInput" placeholder="Your name" maxlength="50">
-            <button class="modal-button" id="nameSubmit">Join Chat</button>
-        </div>
+    <div class="messages" id="messagesContainer">
+      <div class="loading">Loading messages...</div>
     </div>
+    <div class="input-area">
+      <input type="text" class="message-input" id="messageInput" placeholder="Type your message..." maxlength="1000" autocomplete="off">
+      <input type="file" class="file-input" id="fileInput" accept="*/*">
+      <button class="upload-button" id="uploadButton" title="Upload file">📎</button>
+      <button class="send-button" id="sendButton" title="Send message">➤</button>
+    </div>
+  </div>
 
-    <!-- Firebase SDK -->
+  <!-- Name input modal -->
+  <div class="modal" id="nameModal" style="display:flex;">
+    <div class="modal-content">
+      <h2>Welcome to Worldly Chat</h2>
+      <p style="color:var(--c8);margin-bottom:1rem;">Enter your name to join</p>
+      <input type="text" class="name-input" id="nameInput" placeholder="Your name" maxlength="50" autocomplete="off">
+      <br>
+      <button class="modal-button" id="nameSubmit">Join Chat</button>
+    </div>
+  </div>
+
 <script type="module">
-  // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-  // Your web app's Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
     authDomain: "worldlychat.firebaseapp.com",
+    databaseURL: "https://worldlychat-default-rtdb.firebaseio.com", // Ensure this is present!
     projectId: "worldlychat",
-    storageBucket: "worldlychat.firebasestorage.app",
+    storageBucket: "worldlychat.appspot.com",
     messagingSenderId: "755741319630",
     appId: "1:755741319630:web:83f35e68dea64d8aae0b9f"
   };
-
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const messagesRef = ref(db, 'messages');
+
+  // --- UI and State ---
+  let userName = '';
+  let selectedFile = null, selectedFileType = '', selectedFileName = '';
+
+  const nameModal = document.getElementById('nameModal');
+  const nameInput = document.getElementById('nameInput');
+  const nameSubmit = document.getElementById('nameSubmit');
+  const messagesContainer = document.getElementById('messagesContainer');
+  const messageInput = document.getElementById('messageInput');
+  const fileInput = document.getElementById('fileInput');
+  const uploadButton = document.getElementById('uploadButton');
+  const sendButton = document.getElementById('sendButton');
+
+  // Modal logic
+  nameSubmit.addEventListener('click', trySubmitName);
+  nameInput.addEventListener('keypress', e => { if (e.key === 'Enter') trySubmitName(); });
+  function trySubmitName() {
+    const name = nameInput.value.trim();
+    if (name) {
+      userName = name;
+      nameModal.style.display="none";
+      messageInput.focus();
+      startListeningToMessages();
+    } else {
+      nameInput.focus();
+      nameInput.style.borderColor = "#e63946";
+      setTimeout(()=>nameInput.style.borderColor="",500);
+    }
+  }
+  // File handling
+  uploadButton.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', handleFileSelection);
+  function handleFileSelection(e) {
+    const file = (e.target.files && e.target.files[0]) || null;
+    if (!file) { selectedFile = null; selectedFileType = ""; selectedFileName = ""; return; }
+    if (file.size > 5*1024*1024) {
+      alert("File too large (max 5MB)");
+      fileInput.value = ''; return;
+    }
+    selectedFile = file;
+    selectedFileType = file.type;
+    selectedFileName = file.name;
+    uploadButton.style.background="#52b788"; setTimeout(()=>{uploadButton.style.background="#74c69d"},1200);
+  }
+  // Send message logic
+  sendButton.addEventListener('click', sendMessage);
+  messageInput.addEventListener('keypress', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }});
+  function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text && !selectedFile) return;
+    let messageData = {
+      name: userName,
+      text: text,
+      timestamp: Date.now()
+    };
+    if (selectedFile) {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        messageData.file = ev.target.result;
+        messageData.fileType = selectedFileType;
+        messageData.fileName = selectedFileName;
+        push(messagesRef, messageData);
+        resetInput();
+      };
+      reader.readAsDataURL(selectedFile);
+    } else {
+      push(messagesRef, messageData);
+      resetInput();
+    }
+  }
+  function resetInput() {
+    messageInput.value = '';
+    fileInput.value = '';
+    selectedFile = null; selectedFileType = ''; selectedFileName = '';
+    uploadButton.style.background="#74c69d";
+  }
+
+  // Real-time message updates & rendering
+  function startListeningToMessages() {
+    messagesContainer.innerHTML = '<div class="loading">Loading messages...</div>';
+    onValue(messagesRef, snapshot => {
+      messagesContainer.innerHTML = '';
+      let messages = [];
+      snapshot.forEach(child => { messages.push({id:child.key, ...child.val()});});
+      messages.sort((a,b)=>a.timestamp-b.timestamp);
+      if (messages.length===0) {
+        messagesContainer.innerHTML = '<div class="loading">No messages yet.</div>';
+        return;
+      }
+      messages.forEach(displayMessage);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight+1800;
+    });
+  }
+  function escapeHtml(t) {
+    let d=document.createElement('div'); d.textContent = t; return d.innerHTML;
+  }
+  function displayMessage(msg) {
+    const div = document.createElement('div');
+    div.className = 'message';
+    const when = new Date(msg.timestamp).toLocaleString();
+    div.innerHTML = `
+      <div class="message-header">
+        <span class="sender">${escapeHtml(msg.name||'Worldly')}</span>
+        <span class="timestamp">${when}</span>
+      </div>
+      <div class="message-text">${escapeHtml(msg.text||'')}</div>
+    `;
+    if (msg.file) {
+      if (msg.fileType && msg.fileType.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.className = "message-image";
+        img.src = msg.file; img.alt = 'Uploaded image';
+        div.appendChild(img);
+      } else {
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'download-button';
+        downloadBtn.textContent = `📁 Download ${msg.fileName || 'File'}`;
+        downloadBtn.onclick = ()=>{
+          downloadFile(msg.file, msg.fileName||'file', msg.fileType||'application/octet-stream');
+        }
+        div.appendChild(downloadBtn);
+      }
+    }
+    messagesContainer.appendChild(div);
+  }
+  function downloadFile(base64, fileName, fileType) {
+    const [_, data] = base64.split(',');
+    const byteChars = atob(data);
+    const byteNumbers = new Array(byteChars.length);
+    for (let i=0;i<byteChars.length;i++) byteNumbers[i] = byteChars.charCodeAt(i);
+    const blob = new Blob([new Uint8Array(byteNumbers)], {type:fileType});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }
+  // Accessibility: auto-focus input after sending
+  document.addEventListener('keydown', (e)=> {
+    if(!nameModal.style.display||nameModal.style.display=='none') messageInput.focus();
+  });
+  // On load, focus name
+  nameInput.focus();
 </script>
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        const messagesRef = ref(database, 'messages');
-
-        // Global variables
-        let userName = '';
-        
-        // DOM elements
-        const nameModal = document.getElementById('nameModal');
-        const nameInput = document.getElementById('nameInput');
-        const nameSubmit = document.getElementById('nameSubmit');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const messageInput = document.getElementById('messageInput');
-        const fileInput = document.getElementById('fileInput');
-        const uploadButton = document.getElementById('uploadButton');
-        const sendButton = document.getElementById('sendButton');
-
-        // Initialize app
-        function init() {
-            // Show name modal
-            nameModal.style.display = 'flex';
-            nameInput.focus();
-            
-            // Handle name submission
-            nameSubmit.addEventListener('click', handleNameSubmit);
-            nameInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') handleNameSubmit();
-            });
-            
-            // Set up message sending
-            sendButton.addEventListener('click', sendMessage);
-            messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-            
-            // File upload handling
-            uploadButton.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', handleFileUpload);
-        }
-
-        function handleNameSubmit() {
-            const name = nameInput.value.trim();
-            if (name) {
-                userName = name;
-                nameModal.style.display = 'none';
-                messageInput.focus();
-                startListeningToMessages();
-            } else {
-                alert('Please enter your name');
-            }
-        }
-
-        function startListeningToMessages() {
-            messagesContainer.innerHTML = '';
-            
-            // Listen for new messages
-            onValue(messagesRef, (snapshot) => {
-                messagesContainer.innerHTML = '';
-                const messages = [];
-                
-                snapshot.forEach((childSnapshot) => {
-                    messages.push({
-                        id: childSnapshot.key,
-                        ...childSnapshot.val()
-                    });
-                });
-                
-                // Sort messages by timestamp
-                messages.sort((a, b) => a.timestamp - b.timestamp);
-                
-                // Display messages
-                messages.forEach(displayMessage);
-                
-                // Scroll to bottom
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            });
-        }
-
-        function displayMessage(message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            
-            const timestamp = new Date(message.timestamp).toLocaleString();
-            
-            messageDiv.innerHTML = `
-                <div class="message-header">
-                    <span class="sender">${escapeHtml(message.name)}</span>
-                    <span class="timestamp">${timestamp}</span>
-                </div>
-                <div class="message-text">${escapeHtml(message.text)}</div>
-            `;
-            
-            // Handle file attachments
-            if (message.file) {
-                if (message.fileType && message.fileType.startsWith('image/')) {
-                    // Display image inline
-                    const img = document.createElement('img');
-                    img.src = message.file;
-                    img.className = 'message-image';
-                    img.alt = 'Uploaded image';
-                    messageDiv.appendChild(img);
-                } else {
-                    // Display download button for other files
-                    const downloadBtn = document.createElement('button');
-                    downloadBtn.className = 'download-button';
-                    downloadBtn.textContent = `📁 Download ${message.fileName || 'File'}`;
-                    downloadBtn.onclick = () => downloadFile(message.file, message.fileName, message.fileType);
-                    messageDiv.appendChild(downloadBtn);
-                }
-            }
-            
-            messagesContainer.appendChild(messageDiv);
-        }
-
-        function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text && !fileInput.files[0]) return;
-            
-            const messageData = {
-                name: userName,
-                text: text,
-                timestamp: Date.now()
-            };
-            
-            // Handle file upload if present
-            if (fileInput.files[0]) {
-                const file = fileInput.files[0];
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    messageData.file = e.target.result;
-                    messageData.fileName = file.name;
-                    messageData.fileType = file.type;
-                    
-                    // Send message with file
-                    push(messagesRef, messageData);
-                    
-                    // Clear inputs
-                    messageInput.value = '';
-                    fileInput.value = '';
-                };
-                
-                reader.readAsDataURL(file);
-            } else {
-                // Send text-only message
-                push(messagesRef, messageData);
-                messageInput.value = '';
-            }
-        }
-
-        function handleFileUpload(e) {
-            const file = e.target.files[0];
-            if (file) {
-                // Check file size (limit to 5MB for demo)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('File size must be less than 5MB');
-                    fileInput.value = '';
-                    return;
-                }
-                
-                // Show file selected
-                uploadButton.style.background = '#28a745';
-                setTimeout(() => {
-                    uploadButton.style.background = '#6c757d';
-                }, 1000);
-            }
-        }
-
-        function downloadFile(base64Data, fileName, fileType) {
-            // Create blob from base64
-            const byteCharacters = atob(base64Data.split(',')[1]);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: fileType });
-            
-            // Create download link
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName || 'download';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Start the application
-        init();
-    </script>
 </body>
 </html>
