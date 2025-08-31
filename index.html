@@ -51,7 +51,6 @@
       background:var(--c1);
       font-size:1em;
       min-height: 0;
-      /* Prevent overflow: hidden trap! */
     }
     .loading { color: var(--c6); font-style:italic; text-align:center; padding:2rem;}
     .message {
@@ -62,6 +61,7 @@
       border-left:3.5px solid var(--c5);
       box-shadow:0 2px 8px 0 var(--c3)11;
       word-break:break-word;
+      transition: box-shadow .21s;
     }
     .message-header {display:flex; justify-content:space-between;align-items:center; margin-bottom:.35em; font-size:.97em;}
     .sender {font-weight:600; color:var(--c7);}
@@ -226,20 +226,19 @@ function sendMessage() {
 function resetInput(){
   messageInput.value=''; fileInput.value=''; selectedFile=null; selectedFileType=''; selectedFileName='';
 }
+
+// FINAL: Always show all messages, correctly!
 function startListeningToMessages() {
-  messagesContainer.innerHTML = '<div class="loading">Loading...</div>';
   onValue(messagesRef, snap => {
+    // Only clear container ONCE here:
     messagesContainer.innerHTML = "";
     let messages = [];
-    // Correctly include key so messages with the same timestamp are handled separately:
     snap.forEach(child => messages.push({id:child.key, ...child.val()}));
     messages.sort((a,b)=>a.timestamp-b.timestamp);
     if(messages.length===0) messagesContainer.innerHTML='<div class="loading">No messages yet.</div>';
-    messages.forEach(displayMessage);
-    // Always scroll to bottom after rendering all
-    setTimeout(()=>{
-      messagesContainer.scrollTop = messagesContainer.scrollHeight + 999;
-    }, 6);
+    else messages.forEach(displayMessage); // Do NOT clear container in displayMessage!
+    // Scroll to bottom after rendering all
+    messagesContainer.scrollTop = messagesContainer.scrollHeight+999;
   });
 }
 function escapeHtml(txt) {
@@ -265,6 +264,7 @@ function displayMessage(msg){
       div.appendChild(btn);
     }
   }
+  // Only append, never replace!
   messagesContainer.appendChild(div);
 }
 function downloadFile(base64, fileName, fileType) {
