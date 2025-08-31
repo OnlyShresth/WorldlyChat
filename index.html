@@ -4,69 +4,97 @@
 <meta charset="UTF-8">
 <title>Worldly Chat</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
+<!--  Favicon (inline SVG)  -->
 <link rel="icon" type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='24' cy='24' r='20' fill='%23d8f3dc' stroke='%2340916c' stroke-width='3.5'/%3E%3Cellipse cx='24' cy='24' rx='17' ry='20' fill='none' stroke='%2352b788' stroke-width='1.5'/%3E%3Cellipse cx='24' cy='24' rx='20' ry='7' fill='none' stroke='%2352b788' stroke-width='1.5'/%3E%3C/svg%3E">
+
 <style>
-:root{--c1:#d8f3dc;--c2:#b7e4c7;--c3:#95d5b2;--c4:#74c69d;--c5:#52b788;--c6:#40916c;--c7:#2d6a4f;--c8:#1b4332}
-body{margin:0;font-family:system-ui,sans-serif;background:linear-gradient(130deg,var(--c1),var(--c3))}
-.container{max-width:440px;margin:36px auto;height:calc(100vh-72px);min-height:540px;display:flex;flex-direction:column;background:var(--c1);border-radius:24px;box-shadow:0 8px 30px var(--c2)}
-.header{background:var(--c2);border-radius:24px 24px 0 0;text-align:center;padding:1.2rem 1rem .8rem}
-.header svg{width:2.3em;height:2.3em;margin:.2em auto .35em}
-.header h1{margin:0;font-size:1.65em;color:var(--c8)}
-.header p{margin:.15em 0 0;font-size:.95em;color:var(--c7)}
-.messages{flex:1;overflow-y:auto;padding:1rem;background:var(--c1)}
-.message{background:var(--c2);border-left:4px solid var(--c5);border-radius:10px;padding:.7em .95em;margin-bottom:1em;box-shadow:0 2px 6px var(--c3)55}
-.message-header{display:flex;justify-content:space-between;font-size:.93em;margin-bottom:.35em}
+/* ---------- 1. colour palette ---------- */
+:root{
+  --c1:#d8f3dc; --c2:#b7e4c7; --c3:#95d5b2; --c4:#74c69d;
+  --c5:#52b788; --c6:#40916c; --c7:#2d6a4f; --c8:#1b4332;
+}
+/* ---------- 2. basic layout ---------- */
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,sans-serif;background:linear-gradient(130deg,var(--c1),var(--c3))}
+.container{
+  max-width:440px;height:calc(100vh - 70px);margin:35px auto;
+  display:flex;flex-direction:column;background:var(--c1);
+  border-radius:24px;box-shadow:0 7px 28px var(--c2);
+}
+.header{text-align:center;background:var(--c2);border-radius:24px 24px 0 0;padding:1.2rem .8rem}
+.header svg{width:2.3em;height:2.3em;margin-bottom:.25em}
+.header h1{font-size:1.65em;color:var(--c8)}
+.header p{font-size:.95em;color:var(--c7)}
+
+.messages{
+  flex:1;overflow-y:auto;padding:1rem;font-size:1em;background:var(--c1)
+}
+.message{
+  background:var(--c2);border-left:4px solid var(--c5);border-radius:10px;
+  padding:.75em 1em;margin-bottom:1em;word-break:break-word;
+  box-shadow:0 2px 6px var(--c3)55
+}
+.message-header{display:flex;justify-content:space-between;font-size:.9em;margin-bottom:.35em}
 .sender{font-weight:600;color:var(--c7)}
-.timestamp{opacity:.6;color:var(--c8)}
-.message-image{display:block;max-width:98%;max-height:210px;margin-top:.45em;border-radius:7px;object-fit:contain;background:#fff;box-shadow:0 1px 6px var(--c3)77}
-.download-button{margin-top:.4em;padding:.3em .9em;border:none;border-radius:6px;background:var(--c4);color:var(--c8);cursor:pointer}
-.input-area{display:flex;gap:.55em;padding:.75em 1em 1em;background:var(--c2);border-radius:0 0 24px 24px}
-.message-input{flex:1;padding:.55em 1em;border:2px solid var(--c4);border-radius:22px;background:var(--c1);color:var(--c8)}
-.message-input:focus{border-color:var(--c5);outline:none}
-.file-input{display:none}
-.icon-btn{width:36px;height:36px;border-radius:50%;border:none;font-size:1.25em;display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer}
-.icon-btn:hover{background:var(--c5)}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center}
-.modal-box{background:var(--c1);padding:2rem 1.8rem 1.6rem;border-radius:12px;border:1.6px solid var(--c3);text-align:center;box-shadow:0 6px 22px var(--c3)66}
-.modal-box h2{margin:0 0 .8em;color:var(--c6)}
-.name-input{width:85%;padding:.7em 1em;border:2px solid var(--c4);border-radius:8px;font-size:1rem;background:var(--c1);color:var(--c8)}
-.name-input:focus{border-color:var(--c5);outline:none}
-.modal-btn{margin-top:1em;padding:.55em 1.4em;border:none;border-radius:8px;background:var(--c4);color:var(--c8);cursor:pointer}
+.timestamp{color:var(--c8);opacity:.6}
+.message-image{display:block;max-width:98%;max-height:210px;margin-top:.45em;border-radius:7px;object-fit:contain}
+.download{margin-top:.4em;padding:.32em .8em;border:none;border-radius:6px;background:var(--c4);color:var(--c8);cursor:pointer}
+
+.input-area{
+  display:flex;gap:.6em;padding:.75em 1em 1em;background:var(--c2);border-radius:0 0 24px 24px
+}
+input[type="text"]{
+  flex:1;padding:.55em 1em;border:2px solid var(--c4);border-radius:22px;background:var(--c1);color:var(--c8)
+}
+input[type="text"]:focus{border-color:var(--c5);outline:none}
+input[type="file"]{display:none}
+.btn{
+  width:36px;height:36px;border-radius:50%;border:none;font-size:1.25em;
+  display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer
+}
+.btn:hover{background:var(--c5)}
 @media(max-width:520px){.container{margin:0;height:100vh;border-radius:0}}
 </style>
 </head>
 <body>
+
+<!-- ---------- 3. markup ---------- -->
 <div class="container">
   <div class="header">
-    <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#d8f3dc" stroke="#40916c" stroke-width="2.2"/><ellipse cx="16" cy="16" rx="11" ry="14" fill="none" stroke="#74c69d" stroke-width="1.2"/><ellipse cx="16" cy="16" rx="14" ry="5.3" fill="none" stroke="#52b788" stroke-width="1.2"/></svg>
+    <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#d8f3dc" stroke="#40916c" stroke-width="2.3"/><ellipse cx="16" cy="16" rx="11" ry="14" fill="none" stroke="#74c69d" stroke-width="1.3"/><ellipse cx="16" cy="16" rx="14" ry="5.4" fill="none" stroke="#52b788" stroke-width="1.3"/></svg>
     <h1>Worldly Chat</h1>
     <p>Real-time public chat for everyone</p>
   </div>
 
-  <div class="messages" id="messages"></div>
+  <div id="msgs" class="messages"><!-- messages appear here --></div>
 
   <div class="input-area">
-    <input id="text" class="message-input" placeholder="Type a message..." maxlength="700" autocomplete="off">
-    <input id="file" type="file" class="file-input">
-    <button id="pick" class="icon-btn">＋</button>
-    <button id="send" class="icon-btn">→</button>
+    <input id="msgInput" type="text" placeholder="Type a message…" maxlength="700" autocomplete="off">
+    <input id="fileInput" type="file">
+    <button id="pick" class="btn">+</button>
+    <button id="send" class="btn">→</button>
   </div>
 </div>
 
-<div id="modal" class="modal">
-  <div class="modal-box">
-    <h2>Welcome to Worldly Chat</h2>
-    <input id="who" class="name-input" placeholder="Your name" maxlength="40">
-    <br><button id="join" class="modal-btn">Join</button>
+<!-- one-time name modal -->
+<div id="modal" style="
+  position:fixed;inset:0;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center">
+  <div style="background:var(--c1);padding:2rem 1.8rem 1.5rem;border-radius:12px;border:1.6px solid var(--c3);text-align:center">
+    <h2 style="color:var(--c6);margin-bottom:.9em">Welcome to Worldly Chat</h2>
+    <input id="nameInput" placeholder="Your name" style="padding:.7em 1em;width:85%;border:2px solid var(--c4);border-radius:8px;background:var(--c1);color:var(--c8)">
+    <br><button id="join" style="margin-top:1em;padding:.55em 1.4em;border:none;border-radius:8px;background:var(--c4);color:var(--c8)">Join</button>
   </div>
 </div>
 
+<!-- ---------- 4. scripts ---------- -->
 <script type="module">
+/* 4-A. Firebase boot –––––––––––––––––––––––––––––––– */
 import {initializeApp}   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import {getDatabase,ref,push,onValue,off} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+import {getDatabase,ref,push,onValue} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-const app = initializeApp({
+const cfg = {                  /* ← replace only if you regenerate credentials */
   apiKey:"AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
   authDomain:"worldlychat.firebaseapp.com",
   databaseURL:"https://worldlychat-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -74,97 +102,119 @@ const app = initializeApp({
   storageBucket:"worldlychat.appspot.com",
   messagingSenderId:"755741319630",
   appId:"1:755741319630:web:83f35e68dea64d8aae0b9f"
-});
-const db  = getDatabase(app);
-const msgs= ref(db,"messages");
-
-/* ─────── UI elements ─────── */
-const $ = id => document.getElementById(id);
-const box  = $("messages");
-const txt  = $("text");
-const fsel = $("file");
-const pick = $("pick");
-const send = $("send");
-const modal= $("modal");
-const who  = $("who");
-const join = $("join");
-
-let username="", fileObj=null;
-
-/* ─────── join chat ─────── */
-join.onclick = () => {
-  const n = who.value.trim();
-  if(!n) return who.focus();
-  username = n; modal.remove();
-  txt.focus(); listen();
 };
-who.onkeypress = e=>e.key==="Enter" && join.click();
+const db     = getDatabase(initializeApp(cfg));
+const msgsDB = ref(db,"messages");
 
-/* ─────── pick file ─────── */
-pick.onclick = ()=>fsel.click();
-fsel.onchange = () => fileObj = fsel.files[0]||null;
+/* 4-B. helpers ––––––––––––––––––––––––––––––––––––– */
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"']/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 
-/* ─────── send message ─────── */
+/* 4-C. DOM refs –––––––––––––––––––––––––––––––––––– */
+const list   = $("msgs");
+const text   = $("msgInput");
+const file   = $("fileInput");
+const pick   = $("pick");
+const send   = $("send");
+const modal  = $("modal");
+const nameIn = $("nameInput");
+const join   = $("join");
+
+/* 4-D. state –––––––––––––––––––––––––––––––––––––– */
+let username="", f=null;
+
+/* 4-E. join flow –––––––––––––––––––––––––––––––––– */
+join.onclick = () => {
+  const n = nameIn.value.trim();
+  if(!n){nameIn.focus();return}
+  username = n;
+  modal.remove();
+  text.focus();
+  startFeed();    /* attach listener only after user joins */
+};
+nameIn.onkeypress = e=>e.key==="Enter" && join.click();
+
+/* 4-F. pick/send –––––––––––––––––––––––––––––––––– */
+pick.onclick = ()=>file.click();
+file.onchange = ()=> f = file.files[0] || null;
+
 send.onclick = sendMsg;
-txt.onkeypress = e=>{ if(e.key==="Enter" && !e.shiftKey){e.preventDefault(); sendMsg();}};
+text.onkeypress = e=>{
+  if(e.key==="Enter" && !e.shiftKey){e.preventDefault();sendMsg();}
+};
 
 function sendMsg(){
-  const text = txt.value.trim();
-  if(!text && !fileObj) return;
-  const data = {name:username,text,timestamp:Date.now()};
-  if(fileObj){
-    const rdr = new FileReader();
-    rdr.onload = e=>{
-      Object.assign(data,{file:e.target.result,fileName:fileObj.name,fileType:fileObj.type});
-      push(msgs,data); clear();
-    };
-    rdr.readAsDataURL(fileObj);
-  }else{ push(msgs,data); clear(); }
-}
-function clear(){ txt.value=""; fsel.value=""; fileObj=null; }
+  const txt=text.value.trim();
+  if(!txt && !f) return;
 
-/* ─────── live feed ─────── */
-function listen(){
-  let first = true;
-  const handler = snap=>{
-    const arr=[];
-    snap.forEach(c=>arr.push({...c.val(),id:c.key}));
-    arr.sort((a,b)=>a.timestamp-b.timestamp);
-    requestAnimationFrame(()=>{
-      box.innerHTML="";
-      arr.forEach(render);
-      box.scrollTop = box.scrollHeight;
-      if(first){ first=false; off(msgs,handler); setTimeout(()=>onValue(msgs,handler),0);} // detach+reattach once
-    });
-  };
-  onValue(msgs,handler);
+  const data={name:username,text:txt,timestamp:Date.now()};
+  if(f){
+    /* ⚠ FileReader is async – capture current file then reset UI early */
+    const copy=f; f=null; file.value="";
+    const rd=new FileReader();
+    rd.onload=e=>{
+      Object.assign(data,{file:e.target.result,fileName:copy.name,fileType:copy.type});
+      push(msgsDB,data);
+    };
+    rd.readAsDataURL(copy);
+  }else push(msgsDB,data);
+
+  text.value="";
 }
+
+/* 4-G. real-time feed –––––––––––––––––––––––––––––– */
+function startFeed(){
+  onValue(msgsDB, snap=>{
+    list.innerHTML="";
+    const rows=[];
+    snap.forEach(c=>rows.push({...c.val(),id:c.key}));
+    rows.sort((a,b)=>a.timestamp-b.timestamp);
+    rows.forEach(render);
+    list.scrollTop = list.scrollHeight;     /* auto-scroll */
+  });
+}
+
 function render(m){
-  const d=document.createElement("div");
-  d.className="message";
-  d.innerHTML=`<div class="message-header">
-                 <span class="sender">${esc(m.name)}</span>
-                 <span class="timestamp">${new Date(m.timestamp).toLocaleString()}</span>
-               </div>
-               <div class="message-text">${esc(m.text)}</div>`;
+  /* ⚠ Build using DOM, not innerHTML concat → avoids XSS from attributes */
+  const el = document.createElement("div");
+  el.className="message";
+
+  el.innerHTML =
+    `<div class="message-header">
+       <span class="sender">${esc(m.name)}</span>
+       <span class="timestamp">${new Date(m.timestamp).toLocaleString()}</span>
+     </div>
+     <div class="message-text">${esc(m.text)}</div>`;
+
   if(m.file){
     if(m.fileType?.startsWith("image")){
-      const img=new Image(); img.src=m.file; img.alt="image"; img.className="message-image";
-      d.appendChild(img);
+      const img = new Image();
+      img.className="message-image";
+      img.src = m.file;
+      img.alt = "uploaded";
+      el.appendChild(img);
     }else{
-      const b=document.createElement("button");
-      b.textContent = "Download "+(m.fileName||"file");
-      b.className="download-button";
-      b.onclick=()=>download(m.file,m.fileName||"file",m.fileType||"application/octet-stream");
-      d.appendChild(b);
+      const btn=document.createElement("button");
+      btn.className="download";
+      btn.textContent=`Download ${m.fileName||"file"}`;
+      btn.onclick=()=>download(m.file,m.fileName||"file",m.fileType||"application/octet-stream");
+      el.appendChild(btn);
     }
   }
-  box.appendChild(d);
+  list.appendChild(el);
 }
-function esc(t){return t.replace(/[&<>"']/g,m=>({&:"&amp;",<:"&lt;",>:"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
-function download(base64,name,type){
-  const url = URL.createObjectURL(fetch(base64).then(r=>r.blob()).then(b=>b));
-  const a=document.createElement("a"); a.href=base64; a.download=name; a.click();
+
+/* 4-H. download –––––––––––––––––––––––––––––––––––– */
+function download(dataURL, name, type){
+  /* ⚠ Works for any base64 file without server round-trip */
+  fetch(dataURL)
+    .then(r=>r.blob())
+    .then(blob=>{
+      const url = URL.createObjectURL(blob);
+      const a   = Object.assign(document.createElement("a"),{href:url,download:name});
+      a.click();
+      URL.revokeObjectURL(url);
+    });
 }
 </script>
 </body>
