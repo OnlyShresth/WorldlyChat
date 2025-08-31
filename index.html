@@ -23,21 +23,22 @@
       background:linear-gradient(125deg,var(--c1),var(--c3));
       min-height:100vh;
       color:var(--c8);
-      overflow:hidden;
     }
     .container {
-      max-width:420px; margin:38px auto;
+      max-width:420px;
+      margin:38px auto;
       background: var(--c1);
       border-radius: 24px;
       box-shadow:0 8px 32px 0 var(--c2);
       display:flex; flex-direction:column;
-      height:78vh; min-height:560px;
+      height: calc(100vh - 76px); min-height:540px;
     }
     .header {
       background: var(--c2);
       border-radius:24px 24px 0 0;
       padding:1.2rem 1rem 0.7rem;
       text-align:center;
+      flex-shrink:0;
     }
     .headericon {
       display: block; margin:0 auto 0.2em auto; width:2.4em; height:2.4em;
@@ -47,9 +48,10 @@
     .messages {
       flex:1; overflow-y:auto; padding: 1rem;
       border-radius:0 0 12px 12px;
-      transition:background .2s;
       background:var(--c1);
       font-size:1em;
+      min-height: 0;
+      /* Prevent overflow: hidden trap! */
     }
     .loading { color: var(--c6); font-style:italic; text-align:center; padding:2rem;}
     .message {
@@ -65,7 +67,17 @@
     .sender {font-weight:600; color:var(--c7);}
     .timestamp {color:var(--c8); opacity:0.55; }
     .message-text { line-height:1.44;}
-    .message-image {display:block;max-width:100%;border-radius:7px;margin-top:.4em;}
+    .message-image {
+      display:block;
+      max-width:96%;
+      height:auto;
+      max-height:210px;
+      border-radius:7px;
+      margin-top:.4em;
+      object-fit:contain;
+      background: #fff;
+      box-shadow: 0 2px 10px 0 var(--c3)55;
+    }
     .download-button {
       background:var(--c4); color:var(--c8);
       border:none; border-radius: 6px;
@@ -77,7 +89,7 @@
       display:flex; gap:0.5em; align-items:center;
       padding:0.7em 1em 1em 1em;
       background:var(--c2);
-      border-radius:0 0 24px 24px;
+      border-radius:0 0 24px 24px; flex-shrink:0;
     }
     .message-input {
       flex:1; padding:.55em 1em; border: 2px solid var(--c4); border-radius: 22px;
@@ -139,7 +151,6 @@
       <button class="send-button" id="sendButton" title="Send">→</button>
     </div>
   </div>
-
   <!-- Name entry modal -->
   <div class="modal" id="nameModal" style="display:flex;">
     <div class="modal-content">
@@ -153,7 +164,6 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
   authDomain: "worldlychat.firebaseapp.com",
@@ -166,9 +176,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const messagesRef = ref(db, "messages");
-
 let userName = "", selectedFile = null, selectedFileType = "", selectedFileName = "";
-
 const nameModal = document.getElementById('nameModal');
 const nameInput = document.getElementById('nameInput');
 const nameSubmit = document.getElementById('nameSubmit');
@@ -177,7 +185,6 @@ const messageInput = document.getElementById('messageInput');
 const fileInput = document.getElementById('fileInput');
 const uploadButton = document.getElementById('uploadButton');
 const sendButton = document.getElementById('sendButton');
-
 // Modal logic
 nameSubmit.addEventListener('click', trySubmitName);
 nameInput.addEventListener('keypress', e=>{if(e.key==='Enter')trySubmitName();});
@@ -192,7 +199,6 @@ function trySubmitName() {
     nameInput.focus(); nameInput.style.borderColor="#e63946"; setTimeout(()=>nameInput.style.borderColor="",550);
   }
 }
-
 // File input logic
 uploadButton.addEventListener('click', ()=>fileInput.click());
 fileInput.addEventListener('change',function(e){
@@ -220,17 +226,20 @@ function sendMessage() {
 function resetInput(){
   messageInput.value=''; fileInput.value=''; selectedFile=null; selectedFileType=''; selectedFileName='';
 }
-
 function startListeningToMessages() {
   messagesContainer.innerHTML = '<div class="loading">Loading...</div>';
   onValue(messagesRef, snap => {
     messagesContainer.innerHTML = "";
     let messages = [];
-    snap.forEach(child => messages.push(child.val()));
+    // Correctly include key so messages with the same timestamp are handled separately:
+    snap.forEach(child => messages.push({id:child.key, ...child.val()}));
     messages.sort((a,b)=>a.timestamp-b.timestamp);
     if(messages.length===0) messagesContainer.innerHTML='<div class="loading">No messages yet.</div>';
     messages.forEach(displayMessage);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight + 999;
+    // Always scroll to bottom after rendering all
+    setTimeout(()=>{
+      messagesContainer.scrollTop = messagesContainer.scrollHeight + 999;
+    }, 6);
   });
 }
 function escapeHtml(txt) {
