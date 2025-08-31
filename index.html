@@ -34,7 +34,7 @@ body{font-family:system-ui,sans-serif;background:linear-gradient(130deg,var(--c1
 .message{
   background:var(--c2);border-left:4px solid var(--c5);border-radius:10px;
   padding:.75em 1em;margin-bottom:1em;word-break:break-word;
-  box-shadow:0 2px 6px var(--c3)55
+  box-shadow:0 2px 6px rgba(149,213,178,0.15)
 }
 .message-header{display:flex;justify-content:space-between;font-size:.9em;margin-bottom:.35em}
 .sender{font-weight:600;color:var(--c7)}
@@ -60,7 +60,6 @@ input[type="file"]{display:none}
 </head>
 <body>
 
-<!-- ---------- 3. markup ---------- -->
 <div class="container">
   <div class="header">
     <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#d8f3dc" stroke="#40916c" stroke-width="2.3"/><ellipse cx="16" cy="16" rx="11" ry="14" fill="none" stroke="#74c69d" stroke-width="1.3"/><ellipse cx="16" cy="16" rx="14" ry="5.4" fill="none" stroke="#52b788" stroke-width="1.3"/></svg>
@@ -72,7 +71,7 @@ input[type="file"]{display:none}
 
   <div class="input-area">
     <input id="msgInput" type="text" placeholder="Type a message…" maxlength="700" autocomplete="off">
-    <input id="fileInput" type="file">
+    <input id="fileInput" type="file" accept="image/*,application/*">
     <button id="pick" class="btn">+</button>
     <button id="send" class="btn">→</button>
   </div>
@@ -88,13 +87,15 @@ input[type="file"]{display:none}
   </div>
 </div>
 
-<!-- ---------- 4. scripts ---------- -->
 <script type="module">
-/* 4-A. Firebase boot –––––––––––––––––––––––––––––––– */
-import {initializeApp}   from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import {getDatabase,ref,push,onValue} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+/* ---------- Firebase boot ---------- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import {
+  getDatabase, ref, push,
+  onChildAdded, query, orderByChild
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-const cfg = {                  /* ← replace only if you regenerate credentials */
+const cfg = {
   apiKey:"AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
   authDomain:"worldlychat.firebaseapp.com",
   databaseURL:"https://worldlychat-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -103,14 +104,25 @@ const cfg = {                  /* ← replace only if you regenerate credentials
   messagingSenderId:"755741319630",
   appId:"1:755741319630:web:83f35e68dea64d8aae0b9f"
 };
-const db     = getDatabase(initializeApp(cfg));
-const msgsDB = ref(db,"messages");
+const app = initializeApp(cfg);
+const db = getDatabase(app);
+const msgsDB = ref(db, "messages");
 
-/* 4-B. helpers ––––––––––––––––––––––––––––––––––––– */
+/* ---------- helpers ---------- */
+// safe-escape: always convert to string first
+const esc = s => String(s ?? "").replace(/[&<>"']/g, ch=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[ch]));
+
+// small helper: return numeric timestamp fallback
+const safeTs = t => {
+  const n = Number(t);
+  return Number.isFinite(n) ? n : Date.now();
+};
+
 const $ = id => document.getElementById(id);
-const esc = s => s.replace(/[&<>"']/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 
-/* 4-C. DOM refs –––––––––––––––––––––––––––––––––––– */
+/* ---------- DOM refs & state ---------- */
 const list   = $("msgs");
 const text   = $("msgInput");
 const file   = $("fileInput");
@@ -120,101 +132,182 @@ const modal  = $("modal");
 const nameIn = $("nameInput");
 const join   = $("join");
 
-/* 4-D. state –––––––––––––––––––––––––––––––––––––– */
-let username="", f=null;
+let username = "";
+let pendingFile = null;
 
-/* 4-E. join flow –––––––––––––––––––––––––––––––––– */
+/* ---------- join flow ---------- */
 join.onclick = () => {
   const n = nameIn.value.trim();
-  if(!n){nameIn.focus();return}
+  if(!n){ nameIn.focus(); return; }
   username = n;
   modal.remove();
   text.focus();
-  startFeed();    /* attach listener only after user joins */
+  startFeed();
 };
-nameIn.onkeypress = e=>e.key==="Enter" && join.click();
+nameIn.addEventListener("keypress", e => { if(e.key === "Enter") join.click(); });
 
-/* 4-F. pick/send –––––––––––––––––––––––––––––––––– */
-pick.onclick = ()=>file.click();
-file.onchange = ()=> f = file.files[0] || null;
+/* ---------- pick / send ---------- */
+pick.onclick = () => file.click();
+file.onchange = () => pendingFile = file.files[0] || null;
 
 send.onclick = sendMsg;
-text.onkeypress = e=>{
-  if(e.key==="Enter" && !e.shiftKey){e.preventDefault();sendMsg();}
-};
+text.addEventListener("keypress", e => {
+  if(e.key === "Enter" && !e.shiftKey){
+    e.preventDefault();
+    sendMsg();
+  }
+});
 
-function sendMsg(){
-  const txt=text.value.trim();
-  if(!txt && !f) return;
+async function sendMsg(){
+  const txt = text.value.trim();
+  if(!txt && !pendingFile) return; // nothing to send
+  if(!username) { alert("Enter your name first."); return; }
 
-  const data={name:username,text:txt,timestamp:Date.now()};
-  if(f){
-    /* ⚠ FileReader is async – capture current file then reset UI early */
-    const copy=f; f=null; file.value="";
-    const rd=new FileReader();
-    rd.onload=e=>{
-      Object.assign(data,{file:e.target.result,fileName:copy.name,fileType:copy.type});
-      push(msgsDB,data);
-    };
-    rd.readAsDataURL(copy);
-  }else push(msgsDB,data);
+  // construct base payload
+  const data = {
+    name: username,
+    text: txt || "",           // keep empty string instead of undefined
+    timestamp: Date.now()
+  };
 
-  text.value="";
+  // if there's a file, read it as data URL (async)
+  if(pendingFile){
+    const fileCopy = pendingFile;
+    pendingFile = null;
+    file.value = ""; // reset input immediately
+
+    try {
+      const dataURL = await readFileAsDataURL(fileCopy);
+      data.file = dataURL;
+      data.fileName = fileCopy.name;
+      data.fileType = fileCopy.type || "application/octet-stream";
+    } catch (err) {
+      console.error("File read failed:", err);
+      // proceed without file
+    }
+  }
+
+  try {
+    // push returns a promise; we don't need to await for UI
+    await push(msgsDB, data);
+  } catch (err) {
+    console.error("Failed to push message:", err);
+  }
+
+  text.value = "";
 }
 
-/* 4-G. real-time feed –––––––––––––––––––––––––––––– */
-function startFeed(){
-  onValue(msgsDB, snap=>{
-    list.innerHTML="";
-    const rows=[];
-    snap.forEach(c=>rows.push({...c.val(),id:c.key}));
-    rows.sort((a,b)=>a.timestamp-b.timestamp);
-    rows.forEach(render);
-    list.scrollTop = list.scrollHeight;     /* auto-scroll */
+/* Helper to read a file into a data URL (returns Promise) */
+function readFileAsDataURL(f){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = e => reject(e);
+    reader.readAsDataURL(f);
   });
 }
 
-function render(m){
-  /* ⚠ Build using DOM, not innerHTML concat → avoids XSS from attributes */
-  const el = document.createElement("div");
-  el.className="message";
+/* ---------- Real-time feed ---------- */
+/* We attach onChildAdded ordered by timestamp. This streams messages in order
+   and appends each new child to the DOM, avoiding re-rendering the whole list. */
+function startFeed(){
+  // clear existing DOM just in case
+  list.innerHTML = "";
 
-  el.innerHTML =
-    `<div class="message-header">
-       <span class="sender">${esc(m.name)}</span>
-       <span class="timestamp">${new Date(m.timestamp).toLocaleString()}</span>
-     </div>
-     <div class="message-text">${esc(m.text)}</div>`;
-
-  if(m.file){
-    if(m.fileType?.startsWith("image")){
-      const img = new Image();
-      img.className="message-image";
-      img.src = m.file;
-      img.alt = "uploaded";
-      el.appendChild(img);
-    }else{
-      const btn=document.createElement("button");
-      btn.className="download";
-      btn.textContent=`Download ${m.fileName||"file"}`;
-      btn.onclick=()=>download(m.file,m.fileName||"file",m.fileType||"application/octet-stream");
-      el.appendChild(btn);
-    }
-  }
-  list.appendChild(el);
+  // order by timestamp ensures chronological order
+  const q = query(msgsDB, orderByChild('timestamp'));
+  onChildAdded(q, snap => {
+    const data = snap.val();
+    // defensive: if data is null/undefined, skip
+    if(!data) return;
+    safeAppendMessage({ ...data, id: snap.key });
+  });
 }
 
-/* 4-H. download –––––––––––––––––––––––––––––––––––– */
-function download(dataURL, name, type){
-  /* ⚠ Works for any base64 file without server round-trip */
-  fetch(dataURL)
-    .then(r=>r.blob())
-    .then(blob=>{
-      const url = URL.createObjectURL(blob);
-      const a   = Object.assign(document.createElement("a"),{href:url,download:name});
-      a.click();
-      URL.revokeObjectURL(url);
-    });
+/* Append a single message node to DOM safely */
+function safeAppendMessage(m){
+  try {
+    const wasAtBottom = isScrolledToBottom(list);
+
+    const el = document.createElement("div");
+    el.className = "message";
+    el.dataset.id = m.id || "";
+
+    // header
+    const header = document.createElement("div");
+    header.className = "message-header";
+    const sender = document.createElement("span");
+    sender.className = "sender";
+    sender.textContent = esc(m.name); // already escaped into string
+    const ts = document.createElement("span");
+    ts.className = "timestamp";
+    ts.textContent = new Date(safeTs(m.timestamp)).toLocaleString();
+
+    header.appendChild(sender);
+    header.appendChild(ts);
+    el.appendChild(header);
+
+    // message text (preserve newlines without using innerHTML)
+    if(m.text){
+      const textDiv = document.createElement("div");
+      textDiv.className = "message-text";
+      // split on newlines and append text nodes and <br>
+      const parts = String(m.text).split(/\r?\n/);
+      parts.forEach((p, idx) => {
+        textDiv.appendChild(document.createTextNode(p));
+        if(idx < parts.length - 1) textDiv.appendChild(document.createElement("br"));
+      });
+      el.appendChild(textDiv);
+    }
+
+    // file handling
+    if(m.file){
+      if(m.fileType?.startsWith && m.fileType.startsWith("image")){
+        const img = new Image();
+        img.className = "message-image";
+        img.src = m.file;
+        img.alt = m.fileName || "uploaded image";
+        el.appendChild(img);
+      } else {
+        const btn = document.createElement("button");
+        btn.className = "download";
+        btn.textContent = `Download ${m.fileName || "file"}`;
+        btn.addEventListener("click", () => downloadDataURL(m.file, m.fileName || "file", m.fileType || "application/octet-stream"));
+        el.appendChild(btn);
+      }
+    }
+
+    list.appendChild(el);
+
+    // auto-scroll behavior: scroll if user was at bottom already
+    if(wasAtBottom) list.scrollTop = list.scrollHeight;
+  } catch (err) {
+    // catch to avoid one bad message breaking feed
+    console.error("Render failed for message", m, err);
+  }
+}
+
+/* ---------- utilities ---------- */
+function isScrolledToBottom(el){
+  return (el.scrollTop + el.clientHeight + 10) >= el.scrollHeight;
+}
+
+/* download base64/dataURL content by creating a temporary blob URL */
+async function downloadDataURL(dataURL, name, type){
+  try {
+    const res = await fetch(dataURL);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Download failed:", err);
+  }
 }
 </script>
 </body>
