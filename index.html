@@ -23,12 +23,11 @@ body{
   background:linear-gradient(130deg,var(--c1),var(--c3));
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  /* prevent page scrollbar: messages area will handle scrolling */
-  overflow:hidden;
+  overflow:hidden; /* only messages area scrolls */
   min-height:100vh;
 }
 
-/* ===== Container width change (leaves space on both sides) ===== */
+/* Container leaves space on both sides (approx 80px each) */
 .container{
   position:relative;
   width: min(1100px, calc(100% - 160px));
@@ -43,7 +42,7 @@ body{
   overflow:hidden;
 }
 
-/* header with subtle entrance animation for logo/title */
+/* header */
 .header{
   text-align:center;
   background:var(--c2);
@@ -69,7 +68,8 @@ body{
   background:var(--c1);
   -webkit-overflow-scrolling:touch;
 }
-/* custom thin scrollbar inside the container */
+
+/* custom scrollbar inside messages */
 .messages::-webkit-scrollbar{width:10px}
 .messages::-webkit-scrollbar-thumb{
   background:linear-gradient(#cbeed0,#bfe6c3);
@@ -77,7 +77,7 @@ body{
 }
 .messages::-webkit-scrollbar-track{background:transparent}
 
-/* message card + animation on append */
+/* message card + animation */
 .message{
   background:var(--c2);
   border-left:4px solid var(--c5);
@@ -87,14 +87,14 @@ body{
   word-break:break-word;
   box-shadow:0 2px 6px rgba(149,213,178,0.12);
   transform-origin:left center;
-  /* start slightly lowered and scaled for animation — will be reset by .pop class */
+
+  /* default initial state for animated messages */
   opacity:0;
   transform: translateY(6px) scale(.995);
 }
 .message.pop {
   animation: msgPop var(--anim-fast) cubic-bezier(.2,.9,.3,1) both;
 }
-
 @keyframes msgPop{
   from { opacity:0; transform: translateY(6px) scale(.985); }
   to   { opacity:1; transform: translateY(0) scale(1); }
@@ -159,7 +159,7 @@ input[type="file"]{display:none}
 .btn:hover{background:var(--c5)}
 .btn:active{ transform:scale(.92) }
 
-/* a quick micro-animation for send button on send (JS toggles .bang) */
+/* send button micro animation */
 .btn.bang{ animation:btnBang 160ms cubic-bezier(.2,.9,.3,1) both; }
 @keyframes btnBang{ 0%{ transform:scale(1); } 50%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
 
@@ -202,7 +202,7 @@ input[type="file"]{display:none}
   input[type="text"]{ flex:1.2 }
 }
 
-/* animation keyframes referenced earlier */
+/* logo pop */
 @keyframes logoPop{ from{opacity:0; transform:translateY(-6px) scale(.98) rotate(-6deg)} to{opacity:1; transform:translateY(0) scale(1) rotate(0)} }
 </style>
 </head>
@@ -248,13 +248,15 @@ input[type="file"]{display:none}
 </div>
 
 <script type="module">
-/* ---------- Firebase boot ---------- */
+/* ---------- Firebase boot & imports ---------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import {
   getDatabase, ref, push,
-  onChildAdded, query, orderByChild
+  onChildAdded, query, orderByChild,
+  get, limitToLast, startAt
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
+/* ---------- config ---------- */
 const cfg = {
   apiKey:"AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
   authDomain:"worldlychat.firebaseapp.com",
@@ -293,6 +295,9 @@ const removeBtn  = $("removeFile");
 let username = "";
 let pendingFile = null;
 let toastTimer = null;
+
+/* guard to avoid rendering the same message twice */
+const messageIds = new Set();
 
 /* ---------- join flow ---------- */
 join.onclick = () => {
@@ -394,8 +399,7 @@ function showUploadToast(fileObj){
 
   toast.style.display = "flex";
   toast.classList.remove("hide");
-  // force reflow to allow switching to .show animation
-  void toast.offsetWidth;
+  void toast.offsetWidth; // force reflow
   toast.classList.add("show");
 
   if(toastTimer) clearTimeout(toastTimer);
@@ -405,7 +409,6 @@ function showUploadToast(fileObj){
 function hideUploadToast(){
   toast.classList.remove("show");
   toast.classList.add("hide");
-  // hide after animation completes
   setTimeout(()=> {
     toast.style.display = "none";
     toast.classList.remove("hide");
@@ -415,25 +418,75 @@ function hideUploadToast(){
 keepBtn.addEventListener("click", () => { hideUploadToast(); text.focus(); });
 removeBtn.addEventListener("click", () => { pendingFile = null; file.value = ""; hideUploadToast(); text.focus(); });
 
-/* ---------- Real-time feed ---------- */
-function startFeed(){
+/* ---------- Real-time feed with faster initial load ---------- */
+async function startFeed(){
   list.innerHTML = "";
-  const q = query(msgsDB, orderByChild('timestamp'));
-  onChildAdded(q, snap => {
-    const data = snap.val();
-    if(!data) return;
-    safeAppendMessage({ ...data, id: snap.key });
-  });
+  messageIds.clear();
+
+  const INITIAL_LIMIT = 200; // tuneable: how many recent messages to fetch initially
+
+  try {
+    // 1) single-shot fetch of most recent messages
+    const initialQ = query(msgsDB, orderByChild('timestamp'), limitToLast(INITIAL_LIMIT));
+    const snap = await get(initialQ);
+
+    const rows = [];
+    snap.forEach(c => rows.push({...c.val(), id: c.key}));
+    rows.sort((a,b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
+
+    // render initial batch quickly (no per-item animation)
+    rows.forEach(m => {
+      if(m.id && messageIds.has(m.id)) return;
+      safeAppendMessage(m, false);
+      if(m.id) messageIds.add(m.id);
+    });
+
+    // scroll to bottom after initial load
+    list.scrollTop = list.scrollHeight;
+
+    // 2) attach live listener for messages strictly newer than lastTs
+    const lastTs = rows.length ? (Number(rows[rows.length - 1].timestamp) || Date.now()) : Date.now();
+    const liveQ = query(msgsDB, orderByChild('timestamp'), startAt(lastTs + 1));
+    onChildAdded(liveQ, snapChild => {
+      const data = snapChild.val();
+      const id = snapChild.key;
+      if(!data) return;
+      if(id && messageIds.has(id)) return; // dedupe just in case
+      messageIds.add(id);
+      safeAppendMessage({...data, id}, true);
+      if(isScrolledToBottom(list)) list.scrollTop = list.scrollHeight;
+    });
+
+  } catch(err){
+    console.error("startFeed error — falling back to live listener:", err);
+    // fallback: attach full live listener (no initial batch)
+    const fallbackQ = query(msgsDB, orderByChild('timestamp'));
+    onChildAdded(fallbackQ, snap => {
+      const data = snap.val();
+      const id = snap.key;
+      if(!data) return;
+      if(id && messageIds.has(id)) return;
+      messageIds.add(id);
+      safeAppendMessage({...data, id}, true);
+      if(isScrolledToBottom(list)) list.scrollTop = list.scrollHeight;
+    });
+  }
 }
 
-/* Append a single message node to DOM safely */
-function safeAppendMessage(m){
+/* Append a single message node to DOM safely
+   animate=true -> quick pop animation
+   animate=false -> show immediately (used for initial batch)
+*/
+function safeAppendMessage(m, animate = true){
   try {
+    // dedupe by id if present
+    if(m.id && messageIds.has(m.id)) return;
+    if(m.id) messageIds.add(m.id);
+
     const wasAtBottom = isScrolledToBottom(list);
 
     const el = document.createElement("div");
     el.className = "message";
-
     el.dataset.id = m.id || "";
 
     const header = document.createElement("div");
@@ -476,13 +529,19 @@ function safeAppendMessage(m){
       }
     }
 
-    // append and animate quickly
+    // append to DOM
     list.appendChild(el);
-    // tiny delay to ensure element is in DOM, then add pop class
-    requestAnimationFrame(()=> {
-      // use a tiny timeout to allow browser to paint initial state
-      setTimeout(()=> el.classList.add("pop"), 6);
-    });
+
+    if(animate){
+      // tiny delay to let initial styles apply, then add pop class
+      requestAnimationFrame(()=> {
+        setTimeout(()=> el.classList.add("pop"), 6);
+      });
+    } else {
+      // show immediately without animation for speed
+      el.style.opacity = "1";
+      el.style.transform = "none";
+    }
 
     if(wasAtBottom) list.scrollTop = list.scrollHeight;
   } catch (err) {
@@ -493,7 +552,7 @@ function safeAppendMessage(m){
 /* ---------- utilities ---------- */
 function isScrolledToBottom(el){ return (el.scrollTop + el.clientHeight + 10) >= el.scrollHeight; }
 
-async function downloadDataURL(dataURL, name, type){
+async function downloadDataURL(dataURL, name){
   try {
     const res = await fetch(dataURL);
     const blob = await res.blob();
