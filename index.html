@@ -1,71 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Worldly Chat</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<!--  Favicon (inline SVG)  -->
 <link rel="icon" type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='24' cy='24' r='20' fill='%23d8f3dc' stroke='%2340916c' stroke-width='3.5'/%3E%3Cellipse cx='24' cy='24' rx='17' ry='20' fill='none' stroke='%2352b788' stroke-width='1.5'/%3E%3Cellipse cx='24' cy='24' rx='20' ry='7' fill='none' stroke='%2352b788' stroke-width='1.5'/%3E%3C/svg%3E">
 
 <style>
-/* ---------- 1. colour palette ---------- */
 :root{
   --c1:#d8f3dc; --c2:#b7e4c7; --c3:#95d5b2; --c4:#74c69d;
   --c5:#52b788; --c6:#40916c; --c7:#2d6a4f; --c8:#1b4332;
 }
-/* ---------- 2. basic layout ---------- */
-*{box-sizing:border-box;margin:0}
-body{font-family:system-ui,sans-serif;background:linear-gradient(130deg,var(--c1),var(--c3))}
-.container{
-  position:relative;                /* for toast placement */
-  max-width:520px;                  /* widened from 440 → 520 for more room */
-  height:calc(100vh - 70px);
-  margin:35px auto;
-  display:flex;flex-direction:column;background:var(--c1);
-  border-radius:24px;box-shadow:0 7px 28px var(--c2);
-}
-.header{text-align:center;background:var(--c2);border-radius:24px 24px 0 0;padding:1.2rem .8rem; position:relative}
-.header svg{width:2.3em;height:2.3em;margin-bottom:.25em}
-.header h1{font-size:1.65em;color:var(--c8)}
-.header p{font-size:.95em;color:var(--c7)}
 
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  background:linear-gradient(130deg,var(--c1),var(--c3));
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  min-height:100vh;
+}
+
+/* ===== Container width change (leaves space on both sides) =====
+   Uses min(1100px, calc(100% - 160px)) → ~80px margin each side on large screens.
+   On smaller screens fallback to 92vw. */
+.container{
+  position:relative;
+  width: min(1100px, calc(100% - 160px));
+  min-width:360px;
+  height: calc(100vh - 70px);
+  margin:35px auto;
+  display:flex;
+  flex-direction:column;
+  background:var(--c1);
+  border-radius:24px;
+  box-shadow:0 7px 28px rgba(115,178,154,0.12);
+  overflow:hidden;
+}
+
+/* header */
+.header{
+  text-align:center;
+  background:var(--c2);
+  border-radius:24px 24px 0 0;
+  padding:1.1rem .6rem;
+  position:relative;
+}
+.header svg{width:2.3em;height:2.3em;margin-bottom:.25em}
+.header h1{font-size:1.75rem;color:var(--c8);margin-bottom:.15rem}
+.header p{font-size:.95rem;color:var(--c7)}
+
+/* messages */
 .messages{
-  flex:1;overflow-y:auto;padding:1rem;font-size:1em;background:var(--c1)
+  flex:1;
+  overflow-y:auto;
+  padding:1rem;
+  font-size:1rem;
+  background:var(--c1);
 }
 .message{
-  background:var(--c2);border-left:4px solid var(--c5);border-radius:10px;
-  padding:.75em 1em;margin-bottom:1em;word-break:break-word;
-  box-shadow:0 2px 6px rgba(149,213,178,0.15)
+  background:var(--c2);
+  border-left:4px solid var(--c5);
+  border-radius:10px;
+  padding:.75em 1em;
+  margin-bottom:1em;
+  word-break:break-word;
+  box-shadow:0 2px 6px rgba(149,213,178,0.12)
 }
-.message-header{display:flex;justify-content:space-between;font-size:.9em;margin-bottom:.35em}
+.message-header{
+  display:flex;
+  justify-content:space-between;
+  font-size:.9rem;
+  margin-bottom:.35rem;
+}
 .sender{font-weight:600;color:var(--c7)}
 .timestamp{color:var(--c8);opacity:.6}
-.message-image{display:block;max-width:98%;max-height:210px;margin-top:.45em;border-radius:7px;object-fit:contain}
-.download{margin-top:.4em;padding:.32em .8em;border:none;border-radius:6px;background:var(--c4);color:var(--c8);cursor:pointer}
 
+/*  Ensure images scale nicely on all screens  */
+.message-image{
+  display:block;
+  width:100%;        /* fill available width of bubble */
+  height:auto;       /* preserve aspect ratio */
+  max-height:60vh;   /* avoid extremely tall images */
+  margin-top:.45em;
+  border-radius:7px;
+  object-fit:contain;
+  box-shadow:0 3px 10px rgba(0,0,0,0.03);
+}
+.download{
+  margin-top:.4em;padding:.32em .8em;border:none;border-radius:6px;background:var(--c4);color:var(--c8);cursor:pointer
+}
+
+/* input area — slightly wider textbox (more reading space) */
 .input-area{
-  display:flex;gap:.6em;padding:.75em 1em 1em;background:var(--c2);border-radius:0 0 24px 24px;align-items:center;
+  display:flex;
+  gap:.6em;
+  padding:.75em 1em 1em;
+  background:var(--c2);
+  border-radius:0 0 24px 24px;
+  align-items:center;
 }
-/* 1) Wider text box: increase flex so it has more reading space */
 input[type="text"]{
-  flex:1.6;padding:.55em 1em;border:2px solid var(--c4);border-radius:22px;background:var(--c1);color:var(--c8);min-width:0;
+  flex:1.6;                /* wider textbox */
+  padding:.55em 1em;
+  border:2px solid var(--c4);
+  border-radius:22px;
+  background:var(--c1);
+  color:var(--c8);
+  min-width:0;             /* allow shrinking on small screens */
 }
-input[type="text"]:focus{border-color:var(--c5);outline:none}
+input[type="text"]:focus{outline:none;border-color:var(--c5)}
 input[type="file"]{display:none}
 .btn{
   width:36px;height:36px;border-radius:50%;border:none;font-size:1.25em;
   display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer;flex:0 0 auto
 }
 .btn:hover{background:var(--c5)}
-@media(max-width:720px){.container{max-width:92vw}}
-@media(max-width:520px){.container{margin:0;height:100vh;border-radius:0}}
 
-/* Upload popup (toast) — moved to header/top-right so it won't cover messages or input */
+/* toast in top-right of header so it doesn't cover input/messages */
 #fileToast{
   position:absolute;
-  top:12px;                    /* sits inside header area — does NOT overlap messages or input */
+  top:12px;
   right:12px;
   background:linear-gradient(180deg,rgba(255,255,255,0.98),var(--c1));
   border:1px solid rgba(82,183,136,0.12);
@@ -73,26 +130,36 @@ input[type="file"]{display:none}
   padding:.45em .6em; border-radius:10px;
   display:flex;gap:.6em;align-items:center;min-width:180px;max-width:320px;
   z-index:60;
-  align-items:center;
 }
+#fileToast .thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,0,0,0.04)}
 #fileToast .info{flex:1;overflow:hidden}
 #fileToast .fname{font-weight:600;color:var(--c7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#fileToast .fmeta{font-size:.82em;color:var(--c8);opacity:.7;margin-top:2px}
+#fileToast .fmeta{font-size:.82rem;color:var(--c8);opacity:.7;margin-top:2px}
 #fileToast button{background:transparent;border:none;cursor:pointer;color:var(--c8);opacity:.9;padding:.25em .4em;border-radius:6px}
 #fileToast button:hover{background:rgba(0,0,0,0.04)}
-#fileToast .thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,0,0,0.04)}
+
+/* responsiveness */
+@media (max-width: 920px){
+  .container{ width: min(900px, calc(100% - 80px)); } /* keep margins smaller on medium screens */
+}
+@media (max-width: 720px){
+  .container{ width:92vw; margin:18px auto; height:calc(100vh - 36px); border-radius:12px; }
+  .header{ padding:.9rem .6rem }
+  #fileToast{ top:8px; right:8px; max-width:220px; }
+  input[type="text"]{ flex:1.2 }
+}
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="header">
-    <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#d8f3dc" stroke="#40916c" stroke-width="2.3"/><ellipse cx="16" cy="16" rx="11" ry="14" fill="none" stroke="#74c69d" stroke-width="1.3"/><ellipse cx="16" cy="16" rx="14" ry="5.4" fill="none" stroke="#52b788" stroke-width="1.3"/></svg>
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#d8f3dc" stroke="#40916c" stroke-width="2.3"/><ellipse cx="16" cy="16" rx="11" ry="14" fill="none" stroke="#74c69d" stroke-width="1.3"/><ellipse cx="16" cy="16" rx="14" ry="5.4" fill="none" stroke="#52b788" stroke-width="1.3"/></svg>
     <h1>Worldly Chat</h1>
     <p>Real-time public chat for everyone</p>
   </div>
 
-  <div id="msgs" class="messages"><!-- messages appear here --></div>
+  <div id="msgs" class="messages"><!-- messages appended here --></div>
 
   <div class="input-area">
     <input id="msgInput" type="text" placeholder="Type a message…" maxlength="700" autocomplete="off">
@@ -101,7 +168,7 @@ input[type="file"]{display:none}
     <button id="send" class="btn" title="Send">→</button>
   </div>
 
-  <!-- upload toast (created in DOM but hidden). Positioned in top-right header area to avoid covering messages/input -->
+  <!-- toast (hidden by default) sits in top-right header area -->
   <div id="fileToast" style="display:none" aria-live="polite" role="status">
     <img id="fileThumb" class="thumb" style="display:none" alt="preview">
     <div class="info">
@@ -116,8 +183,7 @@ input[type="file"]{display:none}
 </div>
 
 <!-- one-time name modal -->
-<div id="modal" style="
-  position:fixed;inset:0;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center">
+<div id="modal" style="position:fixed;inset:0;background:rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center">
   <div style="background:var(--c1);padding:2rem 1.8rem 1.5rem;border-radius:12px;border:1.6px solid var(--c3);text-align:center">
     <h2 style="color:var(--c6);margin-bottom:.9em">Welcome to Worldly Chat</h2>
     <input id="nameInput" placeholder="Your name" style="padding:.7em 1em;width:85%;border:2px solid var(--c4);border-radius:8px;background:var(--c1);color:var(--c8)">
@@ -147,13 +213,8 @@ const db = getDatabase(app);
 const msgsDB = ref(db, "messages");
 
 /* ---------- helpers ---------- */
-const esc = s => String(s ?? "").replace(/[&<>"']/g, ch=>({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-}[ch]));
-const safeTs = t => {
-  const n = Number(t);
-  return Number.isFinite(n) ? n : Date.now();
-};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+const safeTs = t => { const n = Number(t); return Number.isFinite(n) ? n : Date.now(); };
 const $ = id => document.getElementById(id);
 
 /* ---------- DOM refs & state ---------- */
@@ -205,19 +266,15 @@ text.addEventListener("keypress", e => {
 
 async function sendMsg(){
   const txt = text.value.trim();
-  if(!txt && !pendingFile) return; // nothing to send
+  if(!txt && !pendingFile) return;
   if(!username) { alert("Enter your name first."); return; }
 
-  const data = {
-    name: username,
-    text: txt || "",
-    timestamp: Date.now()
-  };
+  const data = { name: username, text: txt || "", timestamp: Date.now() };
 
   if(pendingFile){
     const fileCopy = pendingFile;
     pendingFile = null;
-    file.value = ""; // reset input immediately
+    file.value = "";
     hideUploadToast();
 
     try {
@@ -239,7 +296,6 @@ async function sendMsg(){
   text.value = "";
 }
 
-/* Helper to read a file into a data URL (returns Promise) */
 function readFileAsDataURL(f){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -249,32 +305,23 @@ function readFileAsDataURL(f){
   });
 }
 
-/* ---------- Upload toast (non-intrusive popup) ---------- */
+/* ---------- Upload toast ---------- */
 function showUploadToast(fileObj){
   fileNameEl.textContent = fileObj.name;
   fileMetaEl.textContent = humanFileSize(fileObj.size);
   if(fileObj.type && fileObj.type.startsWith("image")){
     const reader = new FileReader();
-    reader.onload = () => {
-      fileThumb.src = reader.result;
-      fileThumb.style.display = "block";
-    };
+    reader.onload = () => { fileThumb.src = reader.result; fileThumb.style.display = "block"; };
     reader.onerror = () => { fileThumb.style.display = "none"; };
     reader.readAsDataURL(fileObj);
   } else {
     fileThumb.style.display = "none";
   }
-
-  // display in top-right header area so it doesn't obscure messages/input
   toast.style.display = "flex";
-
   if(toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => hideUploadToast(), 6000);
+  toastTimer = setTimeout(hideUploadToast, 6000);
 }
-function hideUploadToast(){
-  toast.style.display = "none";
-  if(toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
-}
+function hideUploadToast(){ toast.style.display = "none"; if(toastTimer){ clearTimeout(toastTimer); toastTimer = null; } }
 keepBtn.addEventListener("click", () => { hideUploadToast(); text.focus(); });
 removeBtn.addEventListener("click", () => { pendingFile = null; file.value = ""; hideUploadToast(); text.focus(); });
 
@@ -289,7 +336,7 @@ function startFeed(){
   });
 }
 
-/* Append a single message node to DOM safely */
+/* Append message safely */
 function safeAppendMessage(m){
   try {
     const wasAtBottom = isScrolledToBottom(list);
@@ -333,7 +380,7 @@ function safeAppendMessage(m){
         const btn = document.createElement("button");
         btn.className = "download";
         btn.textContent = `Download ${m.fileName || "file"}`;
-        btn.addEventListener("click", () => downloadDataURL(m.file, m.fileName || "file", m.fileType || "application/octet-stream"));
+        btn.addEventListener("click", () => downloadDataURL(m.file, m.fileName || "file"));
         el.appendChild(btn);
       }
     }
@@ -347,11 +394,9 @@ function safeAppendMessage(m){
 }
 
 /* ---------- utilities ---------- */
-function isScrolledToBottom(el){
-  return (el.scrollTop + el.clientHeight + 10) >= el.scrollHeight;
-}
+function isScrolledToBottom(el){ return (el.scrollTop + el.clientHeight + 10) >= el.scrollHeight; }
 
-async function downloadDataURL(dataURL, name, type){
+async function downloadDataURL(dataURL, name){
   try {
     const res = await fetch(dataURL);
     const blob = await res.blob();
