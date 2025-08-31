@@ -15,19 +15,15 @@
   --anim-fast: 140ms;
 }
 
-/* --- page layout --- */
+/* --- layout & styles (same as before) --- */
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{
   font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   background:linear-gradient(130deg,var(--c1),var(--c3));
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  overflow:hidden; /* only messages area scrolls */
+  overflow:hidden;
   min-height:100vh;
 }
-
-/* Container leaves space on both sides (approx 80px each) */
 .container{
   position:relative;
   width: min(1100px, calc(100% - 160px));
@@ -41,148 +37,44 @@ body{
   box-shadow:0 7px 28px rgba(115,178,154,0.12);
   overflow:hidden;
 }
-
-/* header */
-.header{
-  text-align:center;
-  background:var(--c2);
-  border-radius:24px 24px 0 0;
-  padding:1.1rem .6rem;
-  position:relative;
-  overflow:visible;
-}
-.header svg{
-  width:2.3em;height:2.3em;margin-bottom:.25em;
-  transform-origin:center;
-  animation:logoPop var(--anim-fast) cubic-bezier(.2,.9,.3,1) both;
-}
+.header{ text-align:center;background:var(--c2);border-radius:24px 24px 0 0;padding:1.1rem .6rem;position:relative;overflow:visible }
+.header svg{ width:2.3em;height:2.3em;margin-bottom:.25em; transform-origin:center; animation:logoPop var(--anim-fast) cubic-bezier(.2,.9,.3,1) both; }
 .header h1{font-size:1.75rem;color:var(--c8);margin-bottom:.15rem}
 .header p{font-size:.95rem;color:var(--c7)}
 
-/* messages area — only this scrolls */
-.messages{
-  flex:1;
-  overflow-y:auto;
-  padding:1rem;
-  font-size:1rem;
-  background:var(--c1);
-  -webkit-overflow-scrolling:touch;
-}
-
-/* custom scrollbar inside messages */
+.messages{ flex:1; overflow-y:auto; padding:1rem; font-size:1rem; background:var(--c1); -webkit-overflow-scrolling:touch; }
 .messages::-webkit-scrollbar{width:10px}
-.messages::-webkit-scrollbar-thumb{
-  background:linear-gradient(#cbeed0,#bfe6c3);
-  border-radius:999px;border:2px solid rgba(0,0,0,0.03)
-}
+.messages::-webkit-scrollbar-thumb{ background:linear-gradient(#cbeed0,#bfe6c3); border-radius:999px;border:2px solid rgba(0,0,0,0.03) }
 .messages::-webkit-scrollbar-track{background:transparent}
 
-/* message card + animation */
-.message{
-  background:var(--c2);
-  border-left:4px solid var(--c5);
-  border-radius:10px;
-  padding:.75em 1em;
-  margin-bottom:1em;
-  word-break:break-word;
-  box-shadow:0 2px 6px rgba(149,213,178,0.12);
-  transform-origin:left center;
+.message{ background:var(--c2); border-left:4px solid var(--c5); border-radius:10px; padding:.75em 1em; margin-bottom:1em; word-break:break-word; box-shadow:0 2px 6px rgba(149,213,178,0.12); transform-origin:left center; opacity:0; transform: translateY(6px) scale(.995); }
+.message.pop { animation: msgPop var(--anim-fast) cubic-bezier(.2,.9,.3,1) both; }
+@keyframes msgPop{ from { opacity:0; transform: translateY(6px) scale(.985); } to { opacity:1; transform: translateY(0) scale(1); } }
 
-  /* default initial state for animated messages */
-  opacity:0;
-  transform: translateY(6px) scale(.995);
-}
-.message.pop {
-  animation: msgPop var(--anim-fast) cubic-bezier(.2,.9,.3,1) both;
-}
-@keyframes msgPop{
-  from { opacity:0; transform: translateY(6px) scale(.985); }
-  to   { opacity:1; transform: translateY(0) scale(1); }
-}
+.message-header{ display:flex; justify-content:space-between; font-size:.9rem; margin-bottom:.35rem; }
+.sender{ font-weight:600; color:var(--c7) }
+.timestamp{ color:var(--c8); opacity:.65; font-size:.88rem }
 
-.message-header{
-  display:flex;
-  justify-content:space-between;
-  font-size:.9rem;
-  margin-bottom:.35rem;
-}
-.sender{font-weight:600;color:var(--c7)}
-.timestamp{color:var(--c8);opacity:.65;font-size:.88rem}
-
-/* images scale nicely on desktop & mobile */
-.message-image{
-  display:block;
-  width:100%;
-  height:auto;
-  max-height:60vh;
-  margin-top:.45em;
-  border-radius:7px;
-  object-fit:contain;
-  box-shadow:0 3px 10px rgba(0,0,0,0.03);
-}
-
-/* download button */
-.download{
-  margin-top:.4em;padding:.32em .8em;border:none;border-radius:6px;background:var(--c4);color:var(--c8);cursor:pointer;
-  transition:transform 120ms ease;
-}
+.message-image{ display:block; width:100%; height:auto; max-height:60vh; margin-top:.45em; border-radius:7px; object-fit:contain; box-shadow:0 3px 10px rgba(0,0,0,0.03); }
+.download{ margin-top:.4em; padding:.32em .8em; border:none; border-radius:6px; background:var(--c4); color:var(--c8); cursor:pointer; transition:transform 120ms ease; }
 .download:active{ transform:translateY(1px) }
 
-/* input area and controls */
-.input-area{
-  display:flex;
-  gap:.6em;
-  padding:.75em 1em 1em;
-  background:var(--c2);
-  border-radius:0 0 24px 24px;
-  align-items:center;
-}
-input[type="text"]{
-  flex:1.6;
-  padding:.55em 1em;
-  border:2px solid var(--c4);
-  border-radius:22px;
-  background:var(--c1);
-  color:var(--c8);
-  min-width:0;
-  transition:box-shadow 120ms ease, transform 90ms ease;
-}
-input[type="text"]:focus{outline:none;border-color:var(--c5);box-shadow:0 4px 18px rgba(82,183,136,0.06)}
-input[type="file"]{display:none}
+.input-area{ display:flex; gap:.6em; padding:.75em 1em 1em; background:var(--c2); border-radius:0 0 24px 24px; align-items:center; }
+input[type="text"]{ flex:1.6; padding:.55em 1em; border:2px solid var(--c4); border-radius:22px; background:var(--c1); color:var(--c8); min-width:0; transition:box-shadow 120ms ease, transform 90ms ease; }
+input[type="text"]:focus{ outline:none; border-color:var(--c5); box-shadow:0 4px 18px rgba(82,183,136,0.06) }
+input[type="file"]{ display:none }
 
-/* buttons with quick scale animation when clicked */
-.btn{
-  width:36px;height:36px;border-radius:50%;border:none;font-size:1.25em;
-  display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer;flex:0 0 auto;
-  transition:transform 120ms cubic-bezier(.2,.9,.3,1), box-shadow 120ms ease;
-}
-.btn:hover{background:var(--c5)}
+.btn{ width:36px;height:36px;border-radius:50%;border:none;font-size:1.25em; display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer;flex:0 0 auto; transition:transform 120ms cubic-bezier(.2,.9,.3,1), box-shadow 120ms ease; }
+.btn:hover{ background:var(--c5) }
 .btn:active{ transform:scale(.92) }
-
-/* send button micro animation */
 .btn.bang{ animation:btnBang 160ms cubic-bezier(.2,.9,.3,1) both; }
 @keyframes btnBang{ 0%{ transform:scale(1); } 50%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
 
-/* toast (slide+fade) positioned in header top-right; appears without covering messages/input */
-#fileToast{
-  position:absolute;
-  top:12px;
-  right:12px;
-  background:linear-gradient(180deg,rgba(255,255,255,0.98),var(--c1));
-  border:1px solid rgba(82,183,136,0.12);
-  box-shadow:0 6px 20px rgba(43,90,77,0.08);
-  padding:.45em .6em;border-radius:10px;
-  display:flex;gap:.6em;align-items:center;min-width:180px;max-width:320px;
-  z-index:60;
-  transform: translateY(-6px) scale(.995);
-  opacity:0;
-  pointer-events:none;
-}
+#fileToast{ position:absolute; top:12px; right:12px; background:linear-gradient(180deg,rgba(255,255,255,0.98),var(--c1)); border:1px solid rgba(82,183,136,0.12); box-shadow:0 6px 20px rgba(43,90,77,0.08); padding:.45em .6em;border-radius:10px; display:flex; gap:.6em; align-items:center; min-width:180px; max-width:320px; z-index:60; transform: translateY(-6px) scale(.995); opacity:0; pointer-events:none; }
 #fileToast.show{ animation: toastIn 180ms cubic-bezier(.2,.9,.3,1) both; pointer-events:auto; }
 #fileToast.hide{ animation: toastOut 120ms ease both; pointer-events:none; }
 @keyframes toastIn{ from{opacity:0;transform:translateY(-8px) scale(.99)} to{opacity:1;transform:translateY(0) scale(1)} }
 @keyframes toastOut{ from{opacity:1;transform:translateY(0) scale(1)} to{opacity:0;transform:translateY(-8px) scale(.99)} }
-
 #fileToast .thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,0,0,0.04)}
 #fileToast .info{flex:1;overflow:hidden}
 #fileToast .fname{font-weight:600;color:var(--c7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -190,19 +82,9 @@ input[type="file"]{display:none}
 #fileToast button{background:transparent;border:none;cursor:pointer;color:var(--c8);opacity:.9;padding:.25em .4em;border-radius:6px}
 #fileToast button:hover{background:rgba(0,0,0,0.04)}
 
-/* small hover highlight for messages */
 .message:hover{ box-shadow:0 6px 18px rgba(77,144,108,0.06); transform:translateY(-1px); transition:transform 120ms ease, box-shadow 120ms ease; }
-
-/* responsiveness */
 @media (max-width: 920px){ .container{ width: min(900px, calc(100% - 80px)); } }
-@media (max-width: 720px){
-  .container{ width:92vw; margin:18px auto; height:calc(100vh - 36px); border-radius:12px; }
-  .header{ padding:.9rem .6rem }
-  #fileToast{ top:8px; right:8px; max-width:220px; }
-  input[type="text"]{ flex:1.2 }
-}
-
-/* logo pop */
+@media (max-width: 720px){ .container{ width:92vw; margin:18px auto; height:calc(100vh - 36px); border-radius:12px; } .header{ padding:.9rem .6rem } #fileToast{ top:8px; right:8px; max-width:220px; } input[type="text"]{ flex:1.2 } }
 @keyframes logoPop{ from{opacity:0; transform:translateY(-6px) scale(.98) rotate(-6deg)} to{opacity:1; transform:translateY(0) scale(1) rotate(0)} }
 </style>
 </head>
@@ -318,7 +200,6 @@ file.onchange = () => {
 };
 
 send.onclick = () => {
-  // visual button micro-animation
   send.classList.remove("bang");
   void send.offsetWidth;
   send.classList.add("bang");
@@ -371,7 +252,6 @@ async function sendMsg(){
   text.value = "";
 }
 
-/* Helper to read a file into a data URL (returns Promise) */
 function readFileAsDataURL(f){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -381,7 +261,7 @@ function readFileAsDataURL(f){
   });
 }
 
-/* ---------- Upload toast (non-intrusive popup) ---------- */
+/* ---------- Upload toast ---------- */
 function showUploadToast(fileObj){
   fileNameEl.textContent = fileObj.name;
   fileMetaEl.textContent = humanFileSize(fileObj.size);
@@ -399,7 +279,7 @@ function showUploadToast(fileObj){
 
   toast.style.display = "flex";
   toast.classList.remove("hide");
-  void toast.offsetWidth; // force reflow
+  void toast.offsetWidth;
   toast.classList.add("show");
 
   if(toastTimer) clearTimeout(toastTimer);
@@ -418,15 +298,15 @@ function hideUploadToast(){
 keepBtn.addEventListener("click", () => { hideUploadToast(); text.focus(); });
 removeBtn.addEventListener("click", () => { pendingFile = null; file.value = ""; hideUploadToast(); text.focus(); });
 
-/* ---------- Real-time feed with faster initial load ---------- */
+/* ---------- Real-time feed with faster initial load and safe fallback ---------- */
 async function startFeed(){
   list.innerHTML = "";
   messageIds.clear();
 
-  const INITIAL_LIMIT = 200; // tuneable: how many recent messages to fetch initially
+  const INITIAL_LIMIT = 200;
 
   try {
-    // 1) single-shot fetch of most recent messages
+    // 1) try to fetch recent messages using an indexed query (fast)
     const initialQ = query(msgsDB, orderByChild('timestamp'), limitToLast(INITIAL_LIMIT));
     const snap = await get(initialQ);
 
@@ -434,34 +314,31 @@ async function startFeed(){
     snap.forEach(c => rows.push({...c.val(), id: c.key}));
     rows.sort((a,b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
 
-    // render initial batch quickly (no per-item animation)
     rows.forEach(m => {
       if(m.id && messageIds.has(m.id)) return;
       safeAppendMessage(m, false);
       if(m.id) messageIds.add(m.id);
     });
 
-    // scroll to bottom after initial load
     list.scrollTop = list.scrollHeight;
 
-    // 2) attach live listener for messages strictly newer than lastTs
+    // 2) attach live listener for messages newer than lastTs
     const lastTs = rows.length ? (Number(rows[rows.length - 1].timestamp) || Date.now()) : Date.now();
     const liveQ = query(msgsDB, orderByChild('timestamp'), startAt(lastTs + 1));
     onChildAdded(liveQ, snapChild => {
       const data = snapChild.val();
       const id = snapChild.key;
       if(!data) return;
-      if(id && messageIds.has(id)) return; // dedupe just in case
+      if(id && messageIds.has(id)) return;
       messageIds.add(id);
       safeAppendMessage({...data, id}, true);
       if(isScrolledToBottom(list)) list.scrollTop = list.scrollHeight;
     });
 
   } catch(err){
-    console.error("startFeed error — falling back to live listener:", err);
-    // fallback: attach full live listener (no initial batch)
-    const fallbackQ = query(msgsDB, orderByChild('timestamp'));
-    onChildAdded(fallbackQ, snap => {
+    console.warn("startFeed error — falling back to safe listener (no indexed query).", err);
+    // fallback: listen to new children by push-key order (no orderByChild('timestamp') needed)
+    onChildAdded(msgsDB, snap => {
       const data = snap.val();
       const id = snap.key;
       if(!data) return;
@@ -473,13 +350,9 @@ async function startFeed(){
   }
 }
 
-/* Append a single message node to DOM safely
-   animate=true -> quick pop animation
-   animate=false -> show immediately (used for initial batch)
-*/
+/* Append message safely; animate flag controls micro-animation */
 function safeAppendMessage(m, animate = true){
   try {
-    // dedupe by id if present
     if(m.id && messageIds.has(m.id)) return;
     if(m.id) messageIds.add(m.id);
 
@@ -529,16 +402,13 @@ function safeAppendMessage(m, animate = true){
       }
     }
 
-    // append to DOM
     list.appendChild(el);
 
     if(animate){
-      // tiny delay to let initial styles apply, then add pop class
       requestAnimationFrame(()=> {
         setTimeout(()=> el.classList.add("pop"), 6);
       });
     } else {
-      // show immediately without animation for speed
       el.style.opacity = "1";
       el.style.transform = "none";
     }
