@@ -19,6 +19,7 @@
 *{box-sizing:border-box;margin:0}
 body{font-family:system-ui,sans-serif;background:linear-gradient(130deg,var(--c1),var(--c3))}
 .container{
+  position:relative;                /* for toast placement */
   max-width:440px;height:calc(100vh - 70px);margin:35px auto;
   display:flex;flex-direction:column;background:var(--c1);
   border-radius:24px;box-shadow:0 7px 28px var(--c2);
@@ -43,19 +44,40 @@ body{font-family:system-ui,sans-serif;background:linear-gradient(130deg,var(--c1
 .download{margin-top:.4em;padding:.32em .8em;border:none;border-radius:6px;background:var(--c4);color:var(--c8);cursor:pointer}
 
 .input-area{
-  display:flex;gap:.6em;padding:.75em 1em 1em;background:var(--c2);border-radius:0 0 24px 24px
+  display:flex;gap:.6em;padding:.75em 1em 1em;background:var(--c2);border-radius:0 0 24px 24px;align-items:center;
 }
+/* 1) Wider text box: increase flex so it has more reading space */
 input[type="text"]{
-  flex:1;padding:.55em 1em;border:2px solid var(--c4);border-radius:22px;background:var(--c1);color:var(--c8)
+  flex:1.6;padding:.55em 1em;border:2px solid var(--c4);border-radius:22px;background:var(--c1);color:var(--c8);min-width:0;
 }
 input[type="text"]:focus{border-color:var(--c5);outline:none}
 input[type="file"]{display:none}
 .btn{
   width:36px;height:36px;border-radius:50%;border:none;font-size:1.25em;
-  display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer
+  display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer;flex:0 0 auto
 }
 .btn:hover{background:var(--c5)}
 @media(max-width:520px){.container{margin:0;height:100vh;border-radius:0}}
+
+/* Upload popup (toast) */
+#fileToast{
+  position:absolute;
+  right:18px;
+  bottom:72px;               /* sits just above input area */
+  background:linear-gradient(180deg,rgba(255,255,255,0.98),var(--c1));
+  border:1px solid rgba(82,183,136,0.15);
+  box-shadow:0 6px 20px rgba(43,90,77,0.12);
+  padding:.5em .75em; border-radius:10px;
+  display:flex;gap:.6em;align-items:center;min-width:180px;max-width:320px;
+  z-index:50;
+  align-items:center;
+}
+#fileToast .info{flex:1;overflow:hidden}
+#fileToast .fname{font-weight:600;color:var(--c7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#fileToast .fmeta{font-size:.82em;color:var(--c8);opacity:.7;margin-top:2px}
+#fileToast button{background:transparent;border:none;cursor:pointer;color:var(--c8);opacity:.8;padding:.25em .4em;border-radius:6px}
+#fileToast button:hover{background:rgba(0,0,0,0.04)}
+#fileToast .thumb{width:38px;height:38px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,0,0,0.04)}
 </style>
 </head>
 <body>
@@ -72,8 +94,21 @@ input[type="file"]{display:none}
   <div class="input-area">
     <input id="msgInput" type="text" placeholder="Type a message…" maxlength="700" autocomplete="off">
     <input id="fileInput" type="file" accept="image/*,application/*">
-    <button id="pick" class="btn">+</button>
-    <button id="send" class="btn">→</button>
+    <button id="pick" class="btn" title="Attach file">+</button>
+    <button id="send" class="btn" title="Send">→</button>
+  </div>
+
+  <!-- upload toast (created in DOM but hidden) -->
+  <div id="fileToast" style="display:none" aria-live="polite" role="status">
+    <img id="fileThumb" class="thumb" style="display:none" alt="preview">
+    <div class="info">
+      <div id="fileName" class="fname"></div>
+      <div id="fileMeta" class="fmeta"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.2em">
+      <button id="keepFile" title="Keep file">Keep</button>
+      <button id="removeFile" title="Remove file">Remove</button>
+    </div>
   </div>
 </div>
 
@@ -132,8 +167,16 @@ const modal  = $("modal");
 const nameIn = $("nameInput");
 const join   = $("join");
 
+const toast      = $("fileToast");
+const fileThumb  = $("fileThumb");
+const fileNameEl = $("fileName");
+const fileMetaEl = $("fileMeta");
+const keepBtn    = $("keepFile");
+const removeBtn  = $("removeFile");
+
 let username = "";
 let pendingFile = null;
+let toastTimer = null;
 
 /* ---------- join flow ---------- */
 join.onclick = () => {
@@ -148,7 +191,10 @@ nameIn.addEventListener("keypress", e => { if(e.key === "Enter") join.click(); }
 
 /* ---------- pick / send ---------- */
 pick.onclick = () => file.click();
-file.onchange = () => pendingFile = file.files[0] || null;
+file.onchange = () => {
+  pendingFile = file.files[0] || null;
+  if(pendingFile) showUploadToast(pendingFile);
+};
 
 send.onclick = sendMsg;
 text.addEventListener("keypress", e => {
@@ -163,18 +209,17 @@ async function sendMsg(){
   if(!txt && !pendingFile) return; // nothing to send
   if(!username) { alert("Enter your name first."); return; }
 
-  // construct base payload
   const data = {
     name: username,
-    text: txt || "",           // keep empty string instead of undefined
+    text: txt || "",
     timestamp: Date.now()
   };
 
-  // if there's a file, read it as data URL (async)
   if(pendingFile){
     const fileCopy = pendingFile;
     pendingFile = null;
     file.value = ""; // reset input immediately
+    hideUploadToast();
 
     try {
       const dataURL = await readFileAsDataURL(fileCopy);
@@ -183,12 +228,10 @@ async function sendMsg(){
       data.fileType = fileCopy.type || "application/octet-stream";
     } catch (err) {
       console.error("File read failed:", err);
-      // proceed without file
     }
   }
 
   try {
-    // push returns a promise; we don't need to await for UI
     await push(msgsDB, data);
   } catch (err) {
     console.error("Failed to push message:", err);
@@ -207,18 +250,59 @@ function readFileAsDataURL(f){
   });
 }
 
-/* ---------- Real-time feed ---------- */
-/* We attach onChildAdded ordered by timestamp. This streams messages in order
-   and appends each new child to the DOM, avoiding re-rendering the whole list. */
-function startFeed(){
-  // clear existing DOM just in case
-  list.innerHTML = "";
+/* ---------- Upload toast (non-intrusive popup) ---------- */
+function showUploadToast(fileObj){
+  // update contents
+  fileNameEl.textContent = fileObj.name;
+  fileMetaEl.textContent = humanFileSize(fileObj.size);
+  // if image, show thumbnail
+  if(fileObj.type && fileObj.type.startsWith("image")){
+    const reader = new FileReader();
+    reader.onload = () => {
+      fileThumb.src = reader.result;
+      fileThumb.style.display = "block";
+    };
+    reader.onerror = () => { fileThumb.style.display = "none"; };
+    reader.readAsDataURL(fileObj);
+  } else {
+    fileThumb.style.display = "none";
+  }
 
-  // order by timestamp ensures chronological order
+  toast.style.display = "flex";
+
+  // auto-dismiss after 6s (but keep pendingFile until user sends or removes)
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    hideUploadToast();
+  }, 6000);
+}
+
+function hideUploadToast(){
+  toast.style.display = "none";
+  if(toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+}
+
+keepBtn.addEventListener("click", () => {
+  // keep: just hide toast (file still pending)
+  hideUploadToast();
+  text.focus();
+});
+
+removeBtn.addEventListener("click", () => {
+  // remove: clear pending file
+  pendingFile = null;
+  file.value = "";
+  hideUploadToast();
+  text.focus();
+});
+
+/* ---------- Real-time feed ---------- */
+/* Append messages incrementally using onChildAdded ordered by timestamp */
+function startFeed(){
+  list.innerHTML = "";
   const q = query(msgsDB, orderByChild('timestamp'));
   onChildAdded(q, snap => {
     const data = snap.val();
-    // defensive: if data is null/undefined, skip
     if(!data) return;
     safeAppendMessage({ ...data, id: snap.key });
   });
@@ -233,12 +317,12 @@ function safeAppendMessage(m){
     el.className = "message";
     el.dataset.id = m.id || "";
 
-    // header
     const header = document.createElement("div");
     header.className = "message-header";
     const sender = document.createElement("span");
     sender.className = "sender";
-    sender.textContent = esc(m.name); // already escaped into string
+    // using textContent so no HTML is interpreted
+    sender.textContent = String(m.name ?? "Anonymous");
     const ts = document.createElement("span");
     ts.className = "timestamp";
     ts.textContent = new Date(safeTs(m.timestamp)).toLocaleString();
@@ -247,11 +331,9 @@ function safeAppendMessage(m){
     header.appendChild(ts);
     el.appendChild(header);
 
-    // message text (preserve newlines without using innerHTML)
     if(m.text){
       const textDiv = document.createElement("div");
       textDiv.className = "message-text";
-      // split on newlines and append text nodes and <br>
       const parts = String(m.text).split(/\r?\n/);
       parts.forEach((p, idx) => {
         textDiv.appendChild(document.createTextNode(p));
@@ -260,7 +342,6 @@ function safeAppendMessage(m){
       el.appendChild(textDiv);
     }
 
-    // file handling
     if(m.file){
       if(m.fileType?.startsWith && m.fileType.startsWith("image")){
         const img = new Image();
@@ -279,10 +360,8 @@ function safeAppendMessage(m){
 
     list.appendChild(el);
 
-    // auto-scroll behavior: scroll if user was at bottom already
     if(wasAtBottom) list.scrollTop = list.scrollHeight;
   } catch (err) {
-    // catch to avoid one bad message breaking feed
     console.error("Render failed for message", m, err);
   }
 }
@@ -292,7 +371,6 @@ function isScrolledToBottom(el){
   return (el.scrollTop + el.clientHeight + 10) >= el.scrollHeight;
 }
 
-/* download base64/dataURL content by creating a temporary blob URL */
 async function downloadDataURL(dataURL, name, type){
   try {
     const res = await fetch(dataURL);
@@ -308,6 +386,14 @@ async function downloadDataURL(dataURL, name, type){
   } catch (err) {
     console.error("Download failed:", err);
   }
+}
+
+function humanFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024, dm = 1;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 </script>
 </body>
