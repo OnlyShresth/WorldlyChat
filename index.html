@@ -20,11 +20,13 @@
 body{font-family:system-ui,sans-serif;background:linear-gradient(130deg,var(--c1),var(--c3))}
 .container{
   position:relative;                /* for toast placement */
-  max-width:440px;height:calc(100vh - 70px);margin:35px auto;
+  max-width:520px;                  /* widened from 440 → 520 for more room */
+  height:calc(100vh - 70px);
+  margin:35px auto;
   display:flex;flex-direction:column;background:var(--c1);
   border-radius:24px;box-shadow:0 7px 28px var(--c2);
 }
-.header{text-align:center;background:var(--c2);border-radius:24px 24px 0 0;padding:1.2rem .8rem}
+.header{text-align:center;background:var(--c2);border-radius:24px 24px 0 0;padding:1.2rem .8rem; position:relative}
 .header svg{width:2.3em;height:2.3em;margin-bottom:.25em}
 .header h1{font-size:1.65em;color:var(--c8)}
 .header p{font-size:.95em;color:var(--c7)}
@@ -57,27 +59,28 @@ input[type="file"]{display:none}
   display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer;flex:0 0 auto
 }
 .btn:hover{background:var(--c5)}
+@media(max-width:720px){.container{max-width:92vw}}
 @media(max-width:520px){.container{margin:0;height:100vh;border-radius:0}}
 
-/* Upload popup (toast) */
+/* Upload popup (toast) — moved to header/top-right so it won't cover messages or input */
 #fileToast{
   position:absolute;
-  right:18px;
-  bottom:72px;               /* sits just above input area */
+  top:12px;                    /* sits inside header area — does NOT overlap messages or input */
+  right:12px;
   background:linear-gradient(180deg,rgba(255,255,255,0.98),var(--c1));
-  border:1px solid rgba(82,183,136,0.15);
-  box-shadow:0 6px 20px rgba(43,90,77,0.12);
-  padding:.5em .75em; border-radius:10px;
+  border:1px solid rgba(82,183,136,0.12);
+  box-shadow:0 6px 20px rgba(43,90,77,0.08);
+  padding:.45em .6em; border-radius:10px;
   display:flex;gap:.6em;align-items:center;min-width:180px;max-width:320px;
-  z-index:50;
+  z-index:60;
   align-items:center;
 }
 #fileToast .info{flex:1;overflow:hidden}
 #fileToast .fname{font-weight:600;color:var(--c7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #fileToast .fmeta{font-size:.82em;color:var(--c8);opacity:.7;margin-top:2px}
-#fileToast button{background:transparent;border:none;cursor:pointer;color:var(--c8);opacity:.8;padding:.25em .4em;border-radius:6px}
+#fileToast button{background:transparent;border:none;cursor:pointer;color:var(--c8);opacity:.9;padding:.25em .4em;border-radius:6px}
 #fileToast button:hover{background:rgba(0,0,0,0.04)}
-#fileToast .thumb{width:38px;height:38px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,0,0,0.04)}
+#fileToast .thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,0,0,0.04)}
 </style>
 </head>
 <body>
@@ -98,7 +101,7 @@ input[type="file"]{display:none}
     <button id="send" class="btn" title="Send">→</button>
   </div>
 
-  <!-- upload toast (created in DOM but hidden) -->
+  <!-- upload toast (created in DOM but hidden). Positioned in top-right header area to avoid covering messages/input -->
   <div id="fileToast" style="display:none" aria-live="polite" role="status">
     <img id="fileThumb" class="thumb" style="display:none" alt="preview">
     <div class="info">
@@ -144,17 +147,13 @@ const db = getDatabase(app);
 const msgsDB = ref(db, "messages");
 
 /* ---------- helpers ---------- */
-// safe-escape: always convert to string first
 const esc = s => String(s ?? "").replace(/[&<>"']/g, ch=>({
   "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
 }[ch]));
-
-// small helper: return numeric timestamp fallback
 const safeTs = t => {
   const n = Number(t);
   return Number.isFinite(n) ? n : Date.now();
 };
-
 const $ = id => document.getElementById(id);
 
 /* ---------- DOM refs & state ---------- */
@@ -252,10 +251,8 @@ function readFileAsDataURL(f){
 
 /* ---------- Upload toast (non-intrusive popup) ---------- */
 function showUploadToast(fileObj){
-  // update contents
   fileNameEl.textContent = fileObj.name;
   fileMetaEl.textContent = humanFileSize(fileObj.size);
-  // if image, show thumbnail
   if(fileObj.type && fileObj.type.startsWith("image")){
     const reader = new FileReader();
     reader.onload = () => {
@@ -268,36 +265,20 @@ function showUploadToast(fileObj){
     fileThumb.style.display = "none";
   }
 
+  // display in top-right header area so it doesn't obscure messages/input
   toast.style.display = "flex";
 
-  // auto-dismiss after 6s (but keep pendingFile until user sends or removes)
   if(toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    hideUploadToast();
-  }, 6000);
+  toastTimer = setTimeout(() => hideUploadToast(), 6000);
 }
-
 function hideUploadToast(){
   toast.style.display = "none";
   if(toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
 }
-
-keepBtn.addEventListener("click", () => {
-  // keep: just hide toast (file still pending)
-  hideUploadToast();
-  text.focus();
-});
-
-removeBtn.addEventListener("click", () => {
-  // remove: clear pending file
-  pendingFile = null;
-  file.value = "";
-  hideUploadToast();
-  text.focus();
-});
+keepBtn.addEventListener("click", () => { hideUploadToast(); text.focus(); });
+removeBtn.addEventListener("click", () => { pendingFile = null; file.value = ""; hideUploadToast(); text.focus(); });
 
 /* ---------- Real-time feed ---------- */
-/* Append messages incrementally using onChildAdded ordered by timestamp */
 function startFeed(){
   list.innerHTML = "";
   const q = query(msgsDB, orderByChild('timestamp'));
@@ -321,7 +302,6 @@ function safeAppendMessage(m){
     header.className = "message-header";
     const sender = document.createElement("span");
     sender.className = "sender";
-    // using textContent so no HTML is interpreted
     sender.textContent = String(m.name ?? "Anonymous");
     const ts = document.createElement("span");
     ts.className = "timestamp";
