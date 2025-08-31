@@ -15,16 +15,20 @@
   --anim-fast: 140ms;
 }
 
-/* --- layout & styles --- */
+/* --- page layout --- */
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{
   font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   background:linear-gradient(130deg,var(--c1),var(--c3));
-  overflow:hidden; /* only messages area scrolls */
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  /* prevent page scrollbar: messages area will handle scrolling */
+  overflow:hidden;
   min-height:100vh;
 }
 
+/* ===== Container width change (leaves space on both sides) ===== */
 .container{
   position:relative;
   width: min(1100px, calc(100% - 160px));
@@ -39,6 +43,7 @@ body{
   overflow:hidden;
 }
 
+/* header with subtle entrance animation for logo/title */
 .header{
   text-align:center;
   background:var(--c2);
@@ -55,6 +60,7 @@ body{
 .header h1{font-size:1.75rem;color:var(--c8);margin-bottom:.15rem}
 .header p{font-size:.95rem;color:var(--c7)}
 
+/* messages area — only this scrolls */
 .messages{
   flex:1;
   overflow-y:auto;
@@ -63,6 +69,7 @@ body{
   background:var(--c1);
   -webkit-overflow-scrolling:touch;
 }
+/* custom thin scrollbar inside the container */
 .messages::-webkit-scrollbar{width:10px}
 .messages::-webkit-scrollbar-thumb{
   background:linear-gradient(#cbeed0,#bfe6c3);
@@ -70,6 +77,7 @@ body{
 }
 .messages::-webkit-scrollbar-track{background:transparent}
 
+/* message card + animation on append */
 .message{
   background:var(--c2);
   border-left:4px solid var(--c5);
@@ -79,11 +87,18 @@ body{
   word-break:break-word;
   box-shadow:0 2px 6px rgba(149,213,178,0.12);
   transform-origin:left center;
+  /* start slightly lowered and scaled for animation — will be reset by .pop class */
   opacity:0;
   transform: translateY(6px) scale(.995);
 }
-.message.pop { animation: msgPop var(--anim-fast) cubic-bezier(.2,.9,.3,1) both; }
-@keyframes msgPop{ from { opacity:0; transform: translateY(6px) scale(.985); } to { opacity:1; transform: translateY(0) scale(1); } }
+.message.pop {
+  animation: msgPop var(--anim-fast) cubic-bezier(.2,.9,.3,1) both;
+}
+
+@keyframes msgPop{
+  from { opacity:0; transform: translateY(6px) scale(.985); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
 
 .message-header{
   display:flex;
@@ -94,6 +109,7 @@ body{
 .sender{font-weight:600;color:var(--c7)}
 .timestamp{color:var(--c8);opacity:.65;font-size:.88rem}
 
+/* images scale nicely on desktop & mobile */
 .message-image{
   display:block;
   width:100%;
@@ -105,12 +121,14 @@ body{
   box-shadow:0 3px 10px rgba(0,0,0,0.03);
 }
 
+/* download button */
 .download{
   margin-top:.4em;padding:.32em .8em;border:none;border-radius:6px;background:var(--c4);color:var(--c8);cursor:pointer;
   transition:transform 120ms ease;
 }
 .download:active{ transform:translateY(1px) }
 
+/* input area and controls */
 .input-area{
   display:flex;
   gap:.6em;
@@ -132,6 +150,7 @@ input[type="text"]{
 input[type="text"]:focus{outline:none;border-color:var(--c5);box-shadow:0 4px 18px rgba(82,183,136,0.06)}
 input[type="file"]{display:none}
 
+/* buttons with quick scale animation when clicked */
 .btn{
   width:36px;height:36px;border-radius:50%;border:none;font-size:1.25em;
   display:flex;align-items:center;justify-content:center;background:var(--c4);color:var(--c7);cursor:pointer;flex:0 0 auto;
@@ -139,9 +158,12 @@ input[type="file"]{display:none}
 }
 .btn:hover{background:var(--c5)}
 .btn:active{ transform:scale(.92) }
+
+/* a quick micro-animation for send button on send (JS toggles .bang) */
 .btn.bang{ animation:btnBang 160ms cubic-bezier(.2,.9,.3,1) both; }
 @keyframes btnBang{ 0%{ transform:scale(1); } 50%{ transform:scale(1.14); } 100%{ transform:scale(1); } }
 
+/* toast (slide+fade) positioned in header top-right; appears without covering messages/input */
 #fileToast{
   position:absolute;
   top:12px;
@@ -168,8 +190,10 @@ input[type="file"]{display:none}
 #fileToast button{background:transparent;border:none;cursor:pointer;color:var(--c8);opacity:.9;padding:.25em .4em;border-radius:6px}
 #fileToast button:hover{background:rgba(0,0,0,0.04)}
 
+/* small hover highlight for messages */
 .message:hover{ box-shadow:0 6px 18px rgba(77,144,108,0.06); transform:translateY(-1px); transition:transform 120ms ease, box-shadow 120ms ease; }
 
+/* responsiveness */
 @media (max-width: 920px){ .container{ width: min(900px, calc(100% - 80px)); } }
 @media (max-width: 720px){
   .container{ width:92vw; margin:18px auto; height:calc(100vh - 36px); border-radius:12px; }
@@ -177,6 +201,8 @@ input[type="file"]{display:none}
   #fileToast{ top:8px; right:8px; max-width:220px; }
   input[type="text"]{ flex:1.2 }
 }
+
+/* animation keyframes referenced earlier */
 @keyframes logoPop{ from{opacity:0; transform:translateY(-6px) scale(.98) rotate(-6deg)} to{opacity:1; transform:translateY(0) scale(1) rotate(0)} }
 </style>
 </head>
@@ -222,15 +248,13 @@ input[type="file"]{display:none}
 </div>
 
 <script type="module">
-/* ---------- Firebase boot & imports ---------- */
+/* ---------- Firebase boot ---------- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import {
   getDatabase, ref, push,
-  onChildAdded, query, orderByChild,
-  get, limitToLast, startAt
+  onChildAdded, query, orderByChild
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
-/* ---------- config ---------- */
 const cfg = {
   apiKey:"AIzaSyA4PCKB1MZhPfIfUOnqdT1yP8q_pRYBhcg",
   authDomain:"worldlychat.firebaseapp.com",
@@ -270,9 +294,6 @@ let username = "";
 let pendingFile = null;
 let toastTimer = null;
 
-/* guard to avoid rendering the same message twice */
-const messageIds = new Set();
-
 /* ---------- join flow ---------- */
 join.onclick = () => {
   const n = nameIn.value.trim();
@@ -292,6 +313,7 @@ file.onchange = () => {
 };
 
 send.onclick = () => {
+  // visual button micro-animation
   send.classList.remove("bang");
   void send.offsetWidth;
   send.classList.add("bang");
@@ -344,6 +366,7 @@ async function sendMsg(){
   text.value = "";
 }
 
+/* Helper to read a file into a data URL (returns Promise) */
 function readFileAsDataURL(f){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -353,7 +376,7 @@ function readFileAsDataURL(f){
   });
 }
 
-/* ---------- Upload toast ---------- */
+/* ---------- Upload toast (non-intrusive popup) ---------- */
 function showUploadToast(fileObj){
   fileNameEl.textContent = fileObj.name;
   fileMetaEl.textContent = humanFileSize(fileObj.size);
@@ -371,6 +394,7 @@ function showUploadToast(fileObj){
 
   toast.style.display = "flex";
   toast.classList.remove("hide");
+  // force reflow to allow switching to .show animation
   void toast.offsetWidth;
   toast.classList.add("show");
 
@@ -381,6 +405,7 @@ function showUploadToast(fileObj){
 function hideUploadToast(){
   toast.classList.remove("show");
   toast.classList.add("hide");
+  // hide after animation completes
   setTimeout(()=> {
     toast.style.display = "none";
     toast.classList.remove("hide");
@@ -390,89 +415,25 @@ function hideUploadToast(){
 keepBtn.addEventListener("click", () => { hideUploadToast(); text.focus(); });
 removeBtn.addEventListener("click", () => { pendingFile = null; file.value = ""; hideUploadToast(); text.focus(); });
 
-/* ---------- Real-time feed with robust fallback ---------- */
-async function startFeed(){
+/* ---------- Real-time feed ---------- */
+function startFeed(){
   list.innerHTML = "";
-  messageIds.clear();
-
-  const INITIAL_LIMIT = 200; // tune this if needed
-
-  try {
-    // first try the indexed ordered query (fast when .indexOn is present)
-    const initialQ = query(msgsDB, orderByChild('timestamp'), limitToLast(INITIAL_LIMIT));
-    const snap = await get(initialQ);
-
-    const rows = [];
-    snap.forEach(c => rows.push({...c.val(), id: c.key}));
-    rows.sort((a,b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
-
-    rows.forEach(m => {
-      if(m.id && messageIds.has(m.id)) return;
-      safeAppendMessage(m, false); // no per-item animation for initial render
-      if(m.id) messageIds.add(m.id);
-    });
-
-    list.scrollTop = list.scrollHeight;
-
-    // attach live listener for messages strictly newer than lastTs (so we don't reprocess history)
-    const lastTs = rows.length ? (Number(rows[rows.length - 1].timestamp) || Date.now()) : Date.now();
-    const liveQ = query(msgsDB, orderByChild('timestamp'), startAt(lastTs + 1));
-    onChildAdded(liveQ, snapChild => {
-      const data = snapChild.val();
-      const id = snapChild.key;
-      if(!data) return;
-      if(id && messageIds.has(id)) return;
-      messageIds.add(id);
-      safeAppendMessage({...data, id}, true);
-      if(isScrolledToBottom(list)) list.scrollTop = list.scrollHeight;
-    });
-
-  } catch (err) {
-    console.warn("Indexed query failed — falling back to unordered fetch + safe listener:", err);
-
-    try {
-      // fallback #1: do a plain get() of the whole messages node (no ordering). This does not require .indexOn.
-      const snapAll = await get(msgsDB);
-      const rows = [];
-      snapAll.forEach(c => rows.push({...c.val(), id: c.key}));
-      // sort client-side by timestamp (safe even without DB index)
-      rows.sort((a,b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
-
-      rows.forEach(m => {
-        if(m.id && messageIds.has(m.id)) return;
-        safeAppendMessage(m, false);
-        if(m.id) messageIds.add(m.id);
-      });
-
-      list.scrollTop = list.scrollHeight;
-    } catch (err2) {
-      console.error("Fallback unordered get() failed:", err2);
-    }
-
-    // Attach a safe live listener for new children. onChildAdded on the root will iterate existing children too,
-    // but messageIds prevents duplicates. This listener will ensure new messages show up.
-    onChildAdded(msgsDB, snapChild => {
-      const data = snapChild.val();
-      const id = snapChild.key;
-      if(!data) return;
-      if(id && messageIds.has(id)) return;
-      messageIds.add(id);
-      safeAppendMessage({...data, id}, true);
-      if(isScrolledToBottom(list)) list.scrollTop = list.scrollHeight;
-    });
-  }
+  const q = query(msgsDB, orderByChild('timestamp'));
+  onChildAdded(q, snap => {
+    const data = snap.val();
+    if(!data) return;
+    safeAppendMessage({ ...data, id: snap.key });
+  });
 }
 
-/* Append message safely; animate flag controls micro-animation */
-function safeAppendMessage(m, animate = true){
+/* Append a single message node to DOM safely */
+function safeAppendMessage(m){
   try {
-    if(m.id && messageIds.has(m.id)) return;
-    if(m.id) messageIds.add(m.id);
-
     const wasAtBottom = isScrolledToBottom(list);
 
     const el = document.createElement("div");
     el.className = "message";
+
     el.dataset.id = m.id || "";
 
     const header = document.createElement("div");
@@ -515,16 +476,13 @@ function safeAppendMessage(m, animate = true){
       }
     }
 
+    // append and animate quickly
     list.appendChild(el);
-
-    if(animate){
-      requestAnimationFrame(()=> {
-        setTimeout(()=> el.classList.add("pop"), 6);
-      });
-    } else {
-      el.style.opacity = "1";
-      el.style.transform = "none";
-    }
+    // tiny delay to ensure element is in DOM, then add pop class
+    requestAnimationFrame(()=> {
+      // use a tiny timeout to allow browser to paint initial state
+      setTimeout(()=> el.classList.add("pop"), 6);
+    });
 
     if(wasAtBottom) list.scrollTop = list.scrollHeight;
   } catch (err) {
@@ -535,7 +493,7 @@ function safeAppendMessage(m, animate = true){
 /* ---------- utilities ---------- */
 function isScrolledToBottom(el){ return (el.scrollTop + el.clientHeight + 10) >= el.scrollHeight; }
 
-async function downloadDataURL(dataURL, name){
+async function downloadDataURL(dataURL, name, type){
   try {
     const res = await fetch(dataURL);
     const blob = await res.blob();
